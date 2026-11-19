@@ -1,40 +1,45 @@
 ---
 name: model-router
 description: >-
-  Use when creating or revising a software implementation plan, especially in Plan Mode:
-  break work into phases, compare current OpenAI GPT and Anthropic Claude models,
-  choose primary/backup models by quality, cost, access and constraints, and include
-  a clearly labeled model-allocation table in the plan. Also use when asked which
-  model should handle a development stage or when model availability changes.
+  Use when creating or revising a software implementation plan, particularly Plan Mode:
+  break work into stages and recommend OpenAI GPT or Anthropic Claude models based on
+  verified surface access, quality/cost/speed constraints, current documented models,
+  and explicitly labeled primary/backup/external advisory allocations.
 ---
 
-# Model Router — Plan Mode skill
+# Model Router — Plan Mode skill (V1.2)
 
 ## Required workflow
 
-1. Read this file. Then consult `references/routing-policy.md`, `references/plan-template.md`, and `references/model-registry.json` within **this skill directory**. If installed via a project wrapper, resolve paths from the repository root.
-2. Identify task goal, planned phases and deliverables, repository context, risks, deadline, budget, required features, context size, permitted providers, and current execution surface. Do not ask unnecessary setup questions; use `balanced` defaults while flagging uncertainty.
-3. If network is permitted and the registry is over 24 hours old, use `scripts/update_models.py` to check official model IDs. Check vendor changes/deprecations before treating cached data as current. If offline or verification fails, keep the cache and **show its date**. Never manufacture a "verified today" status.
-4. Determine which models the **current account and execution surface** can actually call. `scripts/check_availability.py` optionally checks API keys. Absence of a key is not a negative result. A provider API catalog does not prove ChatGPT or Claude Code access. For recommendation-only planning, list unverified models as **conditional**; do not present them as executable choices.
-5. Apply hard filters first (features, context, platform, lifecycle, provider/region/privacy restrictions, budget, confirmed access if executing). Then choose minimum acceptable capability for each task's complexity and risk. Use `scripts/route.py` if shell execution is available; otherwise follow `references/routing-policy.md` manually. The script's fitness values are **heuristic priors**, not benchmark scores.
-6. In the plan itself, include **Model allocation / 模型分配** following `references/plan-template.md`: primary model and explicit ID, reasoning effort, rationale, backup with ID, account availability confidence, registry timestamp, expected stage deliverables, escalation triggers, and validation. Keep one row for a one-stage task.
-7. When a model cannot satisfy a new constraint or verified tests fail repeatedly, reroute **before** proceeding. Do not make an actual model switch, remote call, API purchase, or cross-provider transfer without authorized orchestration and the user's applicable permissions.
+1. Read this file and `references/routing-policy.md`, `references/plan-template.md`, `references/model-registry.json`, and `references/providers.md` from **this installed skill directory**.
+2. Identify the user's phases and deliverables, requirements, risks, budget, tool needs, surface (`api`, `claude_code`, `codex`, `chatgpt`, `claude_app`, `other`) and explicitly available native model IDs. Use `balanced` defaults when uncertain, rather than interrogating the user for optional preferences.
+3. When the registry is older than 24 hours and network access is permitted, run `scripts/update_models.py --check` to **audit** official public model pages. If inaccessible, keep the dated cache and label it stale. A successful check never silently refreshes `verified_at`, model pricing or other metadata. Consult the relevant official detail page before changing the canonical registry.
+4. For API, `scripts/check_availability.py` optionally returns `status: listed` with a timestamp and **provider**; this is not proof a model request will succeed. It never validates a subscription to ChatGPT/Codex/Claude Code. For a non-API surface, use only explicitly observed or user-reported native model IDs for primary/backup recommendations; no implicit cross-platform mapping is allowed.
+5. Apply hard filters (surface, lifecycle, allowed providers, privacy, required capabilities, context/output, hard price cap, risk threshold) before heuristic scoring. Use `scripts/route.py` when shell access exists; otherwise follow `references/routing-policy.md`. Heuristic scores are **not** external benchmark measurements.
+6. Add `Model allocation / 模型分配` from `references/plan-template.md` **inside** the technical plan, with primary/backup, effort, evidence, registry date, stage outcomes and switch triggers. When there is no known native model, output `无合格原生模型` with an explicitly non-executable `external-conditional` suggestion if useful; do not omit the user's technical plan.
+7. Reroute when tests fail twice without progress or confirmed constraints change. The Skill does **not** call models, switch accounts, purchase API credits or send code to another vendor. A separate authorized orchestrator must handle actual execution and prove access.
 
-## CLI reference (Python 3.10+, no third-party dependencies)
+## CLI examples (Python 3.10+, standard library only)
 
 ```bash
+# From the installed skill root (not the consuming project root):
 python3 scripts/route.py --task-file examples/project-plan.json --format markdown
-python3 scripts/route.py --task-file examples/project-plan.json --available gpt-6.2-sol,claude-sonnet-5-5
-python3 scripts/update_models.py --check  # requires network; read-only
-python3 scripts/check_availability.py --provider openai  # needs OPENAI_API_KEY
+# Explicitly reported native models on the task.surface; NOT an access proof:
+python3 scripts/route.py --task-file examples/project-plan.json --available claude-sonnet-5-5
+# API model-list checks, not a successful model request:
+python3 scripts/check_availability.py --provider openai --output /tmp/openai-inventory.json
+python3 scripts/route.py --task-file examples/project-plan.json --availability-file /tmp/openai-inventory.json
+# Discovery and maintenance (no registry mutation):
+python3 scripts/update_models.py --check --report-file /tmp/model-review.json
+python3 scripts/update_models.py --offline --inventory-file /tmp/openai-inventory.json
 ```
 
-Scripts above are relative to this skill directory. An actual installation uses `skills/model-router/scripts/*` if launched at repository root. No credentials are stored in the registry. Provider model IDs are separate from UI model names and product access.
+For a repository checkout use `skills/model-router/scripts/route.py`, etc. Input examples default to `surface: api`, but a real Claude Code/Codex plan must explicitly set its own surface. `execution: true` only activates **route gating** and needs trusted `call_verified` evidence from a separately authorized caller. There is no actual model invocation in this project.
 
-## Do not
+## Never
 
-- Treat recommendation text as a real execution or background operation.
-- Assert all named models are available in ChatGPT, Codex, Claude Code, or a specific account.
-- Invent a newly announced model, price, context limit or benchmark.
-- Automatically use a high-cost model for every planning or coding stage.
-- Strip the user's technical milestones from a plan to make room for model recommendations.
+- Equate API model inventory with a successful paid request or with UI/product access.
+- Report an external conditional suggestion as a native primary or auto-selected model.
+- Claim that a documentation check updates official prices, lifecycle, or verified timestamps.
+- Use a price-floor-only estimate to satisfy a hard budget constraint.
+- Change the user's technical deliverables, silently transmit private code across vendors, or make an unauthorized API call.

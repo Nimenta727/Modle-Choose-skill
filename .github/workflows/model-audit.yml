@@ -1,0 +1,28 @@
+name: weekly-model-catalog-audit
+on:
+  schedule:
+    - cron: '15 4 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  model-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Official-docs candidate audit (read-only)
+        shell: bash
+        run: |
+          if ! python3 skills/model-router/scripts/update_models.py --check --report-file model-audit.json; then
+            echo 'Official website check unavailable; recording offline stale state only.'
+            python3 skills/model-router/scripts/update_models.py --offline --report-file model-audit.json
+          fi
+      - name: Upload audit for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-catalog-review
+          path: model-audit.json
+          retention-days: 30

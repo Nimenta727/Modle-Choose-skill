@@ -1,38 +1,46 @@
-# Routing policy (V1)
+# Routing policy — V1.2 (reliability + model discovery)
 
-## Hard filters before scores
+## 1. Hard filters before any score
 
-1. Require a published model ID, active lifecycle, permitted provider, appropriate input/tool features, enough context and output tokens.
-2. For execution, require **confirmed account+surface availability**. `api` merely says a vendor documents an API ID; it does not prove access. If no confirmation exists, output a clearly **conditional recommendation** and never claim it can execute.
-3. Do not treat ChatGPT UI subscriptions, Claude web subscriptions, API entitlements, Codex or Claude Code aliases as interchangeable.
-4. If security, privacy, compliance, regional restrictions, budget ceilings or deployment restrictions exclude a provider, hard-exclude that provider. Never upload private project data merely to probe availability.
-5. A model marked deprecated or retired is never a preferred candidate. Expired/unchecked registry data must be visibly marked stale.
-6. If there are no eligible models, say "no eligible model" with the failed constraints; do not silently remove constraints.
+1. Require an active, published model ID, approved provider, task capability, context and output capacity, and a cost below the declared hard budget.
+2. **Respect the execution surface.** The API model catalog is not a Claude Code, Codex, ChatGPT or Claude-app model picker. Models whose registry `channels` do not contain the selected surface need explicit **surface-specific** model reporting (`--available`) or fresh successful-request evidence. Otherwise they cannot be a native primary/backup.
+3. An API inventory (`check_availability.py`) proves only a model is **listed** for those API credentials at the time checked. It does **not** prove a successful invocation. Legacy `status: verified` inventory records are downgraded to `listed`.
+4. `execution: true` is a **gate** on a proposed route (not actual orchestration) requiring a `call_verified` record from an external trusted caller, with `method: successful_model_request`, valid provider, matching surface, and a `checked_at` timestamp no older than 24 hours. **This repository cannot produce call-verified evidence itself.** An external orchestrator must still enforce tokens, consent and access before issuing requests.
+5. If the user's provider, region, privacy, policy or deployment restrictions preclude a model, exclude it. For `allowed_providers: []` exclude every provider; do not treat it as no restriction.
+6. If a hard maximum price is declared and the provider only publishes a **price floor**, the model is excluded: a floor cannot establish that actual cost will fit a cap.
+7. If no native candidates qualify, keep the technical plan intact, show `无合格原生模型`, and optionally show a separately labeled `external-conditional` **informational** candidate. Never silently treat that as native, callable or approved for use.
 
-## Scoring
+## 2. Availability evidence, in decreasing order of confidence
 
-`route.py` computes policy-heuristic scores; they are **not benchmark measurements**. Suggested priorities: `quality`, `balanced` (default), `cost`.
+| Label | Meaning | Native primary without extra data? | May pass execution gate? |
+|---|---|---|---|
+| `call-verified` | Recent successful request from a trusted external source, on this provider and surface | Yes | Yes, but router does not run models |
+| `listed` | Provider's API model-list endpoint returned this ID | For `api` recommendations only | **No** |
+| `user-reported` | User explicitly stated model is available on the selected surface | In **recommendation** mode | **No** |
+| `conditional` | Listed in official model docs, but not verified for this account | For `api` recommendations only | **No** |
+| `external-conditional` | Informational API alternative for a non-API surface | **No** | **No** |
 
-- Quality fit is an editable 1-5 prior for the task type and complexity. For high/critical-risk work, apply an additional minimum fit threshold and have a separate check/review stage.
-- Cost is based on listed USD per million input/output tokens using a stated 80% input / 20% output token blend; all price estimates ignore caching, tool fees, tiered prices, and variable API billing. `price_floor_only` marks a lower bound.
-- Speed is the vendor qualitative latency tier, not a measured ms value.
-- Fit to platform is a hard gate rather than an unverified bonus.
-- Tie-breaking is deterministic by model ID. A candidate lacking verified availability is eligible only for provisional planning.
+A stale, missing, future-dated or provider-mismatched inventory is ignored (24-hour TTL). An explicit `--available` is never proof of successful invocation. The caller's file must be treated as untrusted input unless the caller separately authenticated it.
 
-## Recommended phase constraints
+## 3. Scoring
 
-| Phase | Minimum task fit for low / medium / high | Typical effort |
-|---|---|---|
-| Requirements and documentation | 2 / 3 / 4 | low / medium / high |
-| Architecture, complex debugging, security reviews | 2 / 4 / 5 | low / high / high |
-| Coding, tests, UI, extraction | 2 / 3 / 4 | low / medium / high |
+The Python router uses editable 1–5 **heuristic** capability priors, not a published benchmark. `quality` / `balanced` / `cost` adjust quality/cost/speed weights. Context, risk, tool support, provider, hard budget, lifecycle and surface are gates **before** scoring. A default/omitted complexity of `medium` uses the same thresholds as explicit `medium`.
 
-Use task breakdown and explicit context to set phase complexity; never infer a need for the largest model solely because a task says "plan".
+Blended price is an approximate 80% input / 20% output token rate. It ignores prompt caching, tool costs, batches, subscriptions, tiered prices and actual work volume. Latency tiers are qualitative; do not interpret them as wall-clock measurements.
 
-## Re-route triggers
+| Phase | Minimum fit by complexity (low / medium / high) |
+|---|---|
+| Requirements, docs, coding, testing, UI, extraction | 2 / 3 / 4 |
+| Architecture, debugging, review | 2 / 4 / 5 |
 
-Reevaluate after failing tests twice without progress, repeated hallucinated API features, unexpected context/tool requirements, changed budget, model retirement/availability changes or a new security constraint. Prefer reducing scope or asking for permission before increasing cost. For high-risk modifications, include independent validation even if the same model performs the work.
+High risk raises minimum fit to at least 4; critical risk requires 5. A separate review step is recommended for high-risk code, but not automatically fabricated in the user's requested task list.
 
-## What the skill actually controls
+## 4. Re-routing
 
-In `recommendation` mode, only adds text to the plan; no model switch is performed. In `execution` mode, an external orchestrator must enforce selection and permissions. Claude Code, Codex and ChatGPT do not automatically grant cross-vendor execution rights just because a skill recommends another provider.
+Reroute when tests fail twice without progress, context or tools change, the selected model becomes unavailable, or pricing/lifecycle review invalidates a constraint. Review permissions before switching providers. Keep the main implementation plan separate from the advisory model-allocation section.
+
+## 5. Model discovery, provenance and review
+
+`update_models.py` is **read-only**, including its `--check` and `--inventory-file` modes. It recognizes broader new model ID patterns, combines official page candidates with optionally supplied API inventories, and produces a review report. Missing IDs from rendered HTML are *not proof of retirement*. A reviewer must confirm provider documentation, lifecycle, price, tool support and context limits **before** editing the canonical registry and its per-field review timestamps.
+
+The scheduled weekly audit uploads a review report; it does **not** create API charges, change the registry, commit automatically, grant tool permissions or verify UI entitlement. Only report data changes can be automated safely without provenance validation. Preserve the original `verified_at` until all relevant model facts have been reviewed.

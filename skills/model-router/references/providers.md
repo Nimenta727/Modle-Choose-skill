@@ -1,20 +1,19 @@
-# Providers, sources, and surface boundaries
+# Official sources and runtime boundaries
 
-- OpenAI model catalog: https://developers.openai.com/api/docs/models
+- OpenAI API models: https://developers.openai.com/api/docs/models
 - OpenAI model selection: https://developers.openai.com/api/docs/guides/model-selection
-- OpenAI model deprecations: https://developers.openai.com/api/docs/deprecations
+- OpenAI model retirement: https://developers.openai.com/api/docs/deprecations
 - Anthropic models: https://platform.claude.com/docs/en/models/overview
-- Anthropic model deprecations: https://platform.claude.com/docs/en/about-claude/model-deprecations
-- Claude Code skills: https://code.claude.com/docs/en/skills
-- Codex skills: https://developers.openai.com/codex/skills
+- Anthropic API list models: https://platform.claude.com/docs/en/api/models/list
+- Anthropic retirement: https://platform.claude.com/docs/en/about-claude/model-deprecations
+- Claude Code Skills: https://code.claude.com/docs/en/skills
+- Codex Skills: https://developers.openai.com/codex/skills
 
-## Reliability hierarchy
+## Separate concerns
 
-1. Explicit account-specific, surface-specific model inventory or provider tool confirmation (for execution).
-2. Official vendor catalog for model existence, IDs, limits, and published base pricing.
-3. Model evaluations from a representative workload (recommended to override heuristic task_fit priors).
-4. Local cache (display timestamp and stale warning).
+1. **Documented API ID**: an official source states that a model exists; metadata must be reviewed independently.
+2. **Listed in account inventory**: API model-list endpoint returned the ID. Listing alone is not proof a particular model request works. Only useful for the matching API provider and current time window.
+3. **Successful API request**: a trusted external caller provides fresh evidence that this exact model worked under the intended credential/surface. The Skill does not issue probe requests, and cannot cryptographically authenticate an arbitrary evidence JSON file.
+4. **Tool-specific entitlement**: Claude Code, Codex, ChatGPT and Claude web/app each have independent selection rules, aliases and subscription conditions. No API catalog proves native access to them.
 
-Do not scrape unofficial ranking sites to silently rewrite the catalog. If an official page lists new models, `update_models.py` only reports them as possible new IDs; a human or reviewed PR must explicitly add abilities, availability, and pricing. Pricing, deprecations and context may change separately from IDs. Read official model detail pages when updating.
-
-`api` in the bundled registry is a vendor-documentation channel, not an account-level entitlement. Codex, ChatGPT, Claude Code and Claude app model lists must be verified separately. Claude Code may use aliases (e.g. `opus`), which are product settings rather than guaranteed raw API IDs. Do not assert that a ChatGPT subscription includes API credits or that Claude Code can transparently run an OpenAI model.
+This repository never silently changes published model metadata based on scraped HTML or an account inventory. Official page string matching may miss rendered content or find misleading text. Review a candidate's detail page before editing context, capabilities, lifecycle, prices or ratings. Distinguish confirmed observations from heuristic assumptions.

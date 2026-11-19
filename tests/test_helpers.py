@@ -33,6 +33,27 @@ class HelperTests(unittest.TestCase):
         self.assertEqual(check["providers"]["openai"]["new_candidate_ids"], ["gpt-6.3-astra"])
         self.assertEqual(len(registry["models"]), 8)
 
+    def test_broad_version_detection_and_inventory_review(self):
+        from datetime import timedelta
+        new = updater.audit(registry, {"openai": "gpt-7-nova gpt-6.2-sol", "anthropic": "claude-zenith-6-1 claude-sonnet-5-5"},
+                            now=datetime(2026, 11, 19, tzinfo=timezone.utc),
+                            inventories=[{"provider": "openai", "surface": "api", "status": "listed",
+                                          "checked_at": datetime(2026, 11, 19, tzinfo=timezone.utc).isoformat(),
+                                          "available_models": ["gpt-7-nova", "gpt-6.2-sol"]}])
+        self.assertEqual(new["providers"]["openai"]["new_candidate_ids"], ["gpt-7-nova"])
+        self.assertEqual(new["providers"]["anthropic"]["new_candidate_ids"], ["claude-zenith-6-1"])
+        self.assertEqual(new["providers"]["openai"]["account_inventory_candidates"], ["gpt-7-nova"])
+        self.assertIn("openai", new["metadata_review_required"])
+        self.assertEqual(len(registry["models"]), 8)
+
+    def test_stale_inventory_is_ignored(self):
+        inv = {"provider": "openai", "surface": "api", "status": "listed",
+               "checked_at": datetime(2026, 11, 17, tzinfo=timezone.utc).isoformat(),
+               "available_models": ["gpt-7-nova"]}
+        new = updater.audit(registry, now=datetime(2026, 11, 19, tzinfo=timezone.utc), inventories=[inv])
+        self.assertEqual(new["providers"]["openai"]["inventory_status"], "stale")
+        self.assertEqual(new["providers"]["openai"]["account_inventory_candidates"], [])
+
     def test_no_api_key_does_not_claim_unavailable(self):
         from unittest.mock import patch
         with patch.dict("os.environ", {"OPENAI_API_KEY": ""}):

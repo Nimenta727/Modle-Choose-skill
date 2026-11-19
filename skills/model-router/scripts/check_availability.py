@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Optional API-key-scoped model inventory; never exposes API keys or assumes UI entitlement."""
+"""Optional API model inventory: presence is NOT proof that a request will succeed."""
 from __future__ import annotations
 import argparse
 from datetime import datetime, timezone
@@ -26,7 +26,7 @@ def fetch(provider: str) -> dict:
     cursor = None
     # Bounded pagination; partial results are not treated as complete account inventory.
     for _ in range(20):
-        url = endpoint + ("?" + urlencode({"limit": 1000, "after_id": cursor}) if cursor else "")
+        url = endpoint + ("?" + urlencode({"limit": 1000, **({"after_id": cursor} if cursor else {})}) if provider == "anthropic" else "")
         req = Request(url, headers=headers)
         with urlopen(req, timeout=15) as response:
             payload = json.load(response)
@@ -42,8 +42,8 @@ def fetch(provider: str) -> dict:
         cursor = next_cursor
     else:
         raise ValueError("pagination exceeded safety limit")
-    return {"provider": provider, "surface": "api", "status": "verified", "checked_at": datetime.now(timezone.utc).isoformat(),
-            "available_models": sorted(ids), "note": "API model inventory only; listing may not guarantee request success or product-UI access"}
+    return {"provider": provider, "surface": "api", "status": "listed", "method": "account_model_inventory", "checked_at": datetime.now(timezone.utc).isoformat(),
+            "available_models": sorted(ids), "note": "API inventory only. This does NOT verify a successful model request, UI access or Codex/Claude Code entitlements"}
 
 
 def main() -> int:
@@ -67,7 +67,7 @@ def main() -> int:
             pass
     else:
         print(output)
-    return 0 if result["status"] == "verified" else 1
+    return 0 if result["status"] == "listed" else 1
 
 
 if __name__ == "__main__":
