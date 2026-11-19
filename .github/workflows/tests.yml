@@ -11,7 +11,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Compile
-        run: python -m compileall -q skills/model-router/scripts scripts evals
+        run: python -m compileall -q skills/model-router/scripts scripts evals orchestrator
       - name: Unit tests
         run: python -m unittest discover -s tests -v
       - name: Offline policy evaluation
@@ -33,6 +33,11 @@ jobs:
           python skills/model-router/scripts/handoff.py \
             --task-file skills/model-router/examples/project-plan.json \
             > "${{ runner.temp }}/handoff-templates.md"
+      - name: V2.0 execution adapter dry-run (no provider calls)
+        run: |
+          python skills/model-router/scripts/route.py --task-file skills/model-router/examples/project-plan.json --format json > "${{ runner.temp }}/route-v2.json"
+          python orchestrator/prepare.py --task-file skills/model-router/examples/project-plan.json --route-file "${{ runner.temp }}/route-v2.json" --output "${{ runner.temp }}/unapproved-v2.json"
+          python orchestrator/run.py --manifest "${{ runner.temp }}/unapproved-v2.json" --workspace . --all
       - name: Upload offline eval reports
         if: always()
         uses: actions/upload-artifact@v4

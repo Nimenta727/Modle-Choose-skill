@@ -8,3 +8,8 @@ __pycache__/
 local-eval-reports/
 evals/outputs/
 evals/traces/
+
+# Local execution manifests and private run records
+.model-router/
+local-execution.json
+routing-result.json

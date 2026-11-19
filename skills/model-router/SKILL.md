@@ -7,7 +7,7 @@ description: >-
   and explicitly labeled primary/backup/external advisory allocations.
 ---
 
-# Model Router — Plan Mode skill (V1.4)
+# Model Router — Plan Mode skill (V2.0 recommendation + optional runner)
 
 ## Required workflow
 
@@ -61,3 +61,8 @@ python3 scripts/handoff.py --task-file examples/project-plan.json
 ```
 
 The root repository has `evals/compare_trials.py`, which produces `proposal_unreviewed` ONLY; it is not installed as a model-switching skill or auto-applied. Cost outputs are uncached vendor API-list illustrations, not subscription bills. Handoff templates are **unfilled**, never claimed to be actual test outcomes.
+
+
+## Optional supervised execution (repository checkout only, NOT implicit)
+
+`orchestrator/prepare.py` can convert a JSON router result into an **unapproved** execution manifest. `orchestrator/run.py` is an optional local CLI bridge to Claude Code or Codex. It defaults to dry-run. **Never invoke live execution from Plan Mode merely because the Skill was read or a plan was generated.** Live operation requires the user's explicit request, an approved stage, an explicit CLI model, `--execute`, and a matching stage confirmation; writes need a separate `--allow-write`. Do not silently forward previous responses across providers. See root `docs/v2.0-execution.md`. This Skill does not automatically install the execution bridge into other projects.

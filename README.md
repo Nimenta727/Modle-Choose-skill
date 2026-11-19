@@ -2,7 +2,11 @@
 
 跨 Claude Code / Codex 项目可安装的 **Agent Skill**，在开发计划内分配 OpenAI 和 Anthropic 模型，同时展示证据、执行平台、备用方案、模型目录的核实时间和切换条件。
 
-**当前版本 V1.4：在 V1.3 基础上增加可审查的配对真实任务评测、人工批准校准、项目 API 参考成本估算和阶段交接模板。它不自动执行模型调用、不切换供应商、不擅自上传项目代码。** `evals/trials.json` 当前为空，未产生真实模型质量排名；策略启发式分数不代表独立实测。
+**当前版本 V2.0 MVP：提供可选的本地 Claude Code / Codex 分阶段执行工具；默认 dry-run、每阶段人工授权、只读起步、禁止自动跨供应商传递完整日志。V1.4 的路由、评测、成本与交接能力保留。**
+
+> 路由 Skill 本身仍只负责推荐。真正调用模型需单独运行 `orchestrator/run.py --execute`，且安装、登录相应 CLI。CLI 结束不是验收成功。
+
+**此前 V1.4：在 V1.3 基础上增加可审查的配对真实任务评测、人工批准校准、项目 API 参考成本估算和阶段交接模板。它不自动执行模型调用、不切换供应商、不擅自上传项目代码。** `evals/trials.json` 当前为空，未产生真实模型质量排名；策略启发式分数不代表独立实测。
 
 ## 项目安装
 
@@ -181,3 +185,19 @@ python3 skills/model-router/scripts/route.py \
 ```
 
 本版本**没有**运行任何真实 Claude Code/Codex 账号任务，因此尚不能给出真实触发成功率、任务通过率或成本节省百分比。更多要求与人工审核样例请见 [V1.4 评测说明](docs/v1.4.md)。
+
+
+## V2.0 受控多模型执行（独立的可选运行器）
+
+执行器是独立的 Python CLI：
+
+```bash
+python3 skills/model-router/scripts/route.py --task-file skills/model-router/examples/project-plan.json --format json > routing-result.json
+python3 orchestrator/prepare.py --task-file skills/model-router/examples/project-plan.json --route-file routing-result.json --output local-execution.json
+# 编辑 local-execution.json：逐阶段设置 cli_model 和 approved: true（默认均未批准）
+python3 orchestrator/run.py --manifest local-execution.json --workspace /path/to/your-project --all
+# 真正调用前需逐阶段明确确认，且必须在本地安装并登录对应 CLI
+python3 orchestrator/run.py --manifest local-execution.json --workspace /path/to/your-project --stage s01-requirements --execute --confirm-stage s01-requirements
+```
+
+该工具不自动开启订阅/购买 API、不自动推送代码、不将未经审核的结果送给下个供应商。写模式要另外使用 `--allow-write` 并要求干净 Git 工作区。详情见 [V2.0 执行说明](docs/v2.0-execution.md)。**仅做了离线、模拟 CLI 的测试；尚未在真实已登录的 Claude Code / Codex 中测通。**
