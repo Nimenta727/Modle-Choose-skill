@@ -1,0 +1,14 @@
+{
+  "name": "Web application with authentication and admin portal",
+  "priority": "balanced",
+  "surface": "api",
+  "execution": false,
+  "allowed_providers": ["openai", "anthropic"],
+  "stages": [
+    {"name": "Requirements", "type": "analysis", "complexity": "medium", "deliverable": "Acceptance criteria and task decomposition", "required_capabilities": ["reasoning"]},
+    {"name": "Architecture", "type": "architecture", "complexity": "high", "risk": "high", "deliverable": "System design and security boundaries", "required_capabilities": ["coding", "tools"]},
+    {"name": "Implementation", "type": "coding", "complexity": "medium", "deliverable": "Frontend and backend code", "required_capabilities": ["coding"]},
+    {"name": "Testing", "type": "testing", "complexity": "medium", "deliverable": "Tests and validated bug fixes"},
+    {"name": "Review", "type": "review", "complexity": "high", "risk": "critical", "deliverable": "Final architecture and release review"}
+  ]
+}

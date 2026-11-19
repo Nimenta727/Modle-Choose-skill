@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "verified_at": "2026-11-19",
+  "refresh_after_hours": 24,
+  "price_unit": "USD per million tokens (standard base pricing; excludes caching, batch, regional and tiered surcharges)",
+  "sources": {
+    "openai": "https://developers.openai.com/api/docs/models",
+    "anthropic": "https://platform.claude.com/docs/en/models/overview"
+  },
+  "metadata_note": "Model IDs, advertised input/output prices and context limits come from provider docs on verified_at. Ability scores are subjective policy priors, NOT measured benchmark results. API listing does not establish eligibility in ChatGPT, Codex, Claude Code or Claude app.",
+  "models": [
+    {
+      "id": "gpt-6.2-astra", "name": "GPT-6.2 Astra", "provider": "openai", "lifecycle": "active", "channels": ["api"],
+      "context_tokens": 1050000, "max_output_tokens": 128000, "input_usd_per_mtok": 8.0, "output_usd_per_mtok": 40.0,
+      "latency_tier": 2, "capabilities": ["text", "vision", "tools", "web_search", "file_search", "computer_use", "reasoning", "coding"],
+      "task_fitness": {"analysis": 5, "architecture": 5, "coding": 5, "debugging": 5, "testing": 5, "review": 5, "documentation": 4, "extraction": 3, "ui": 4},
+      "effort_levels": ["low", "medium", "high", "xhigh", "max"], "source": "openai"
+    },
+    {
+      "id": "gpt-6.2-sol", "name": "GPT-6.2 Sol", "provider": "openai", "lifecycle": "active", "channels": ["api"],
+      "context_tokens": 1050000, "max_output_tokens": 128000, "input_usd_per_mtok": 2.0, "output_usd_per_mtok": 10.0,
+      "latency_tier": 3, "capabilities": ["text", "vision", "tools", "web_search", "file_search", "computer_use", "reasoning", "coding"],
+      "task_fitness": {"analysis": 4, "architecture": 4, "coding": 4, "debugging": 4, "testing": 5, "review": 4, "documentation": 5, "extraction": 4, "ui": 4},
+      "effort_levels": ["low", "medium", "high", "xhigh", "max"], "source": "openai"
+    },
+    {
+      "id": "gpt-6.1-terra", "name": "GPT-6.1 Terra", "provider": "openai", "lifecycle": "active", "channels": ["api"],
+      "context_tokens": 1050000, "max_output_tokens": 128000, "input_usd_per_mtok": 1.0, "output_usd_per_mtok": 5.0,
+      "latency_tier": 4, "capabilities": ["text", "vision", "tools", "web_search", "file_search", "computer_use", "reasoning", "coding"],
+      "task_fitness": {"analysis": 3, "architecture": 3, "coding": 4, "debugging": 3, "testing": 4, "review": 3, "documentation": 5, "extraction": 4, "ui": 5},
+      "effort_levels": ["none", "low", "medium", "high", "xhigh", "max"], "source": "openai"
+    },
+    {
+      "id": "gpt-6-luna", "name": "GPT-6 Luna", "provider": "openai", "lifecycle": "active", "channels": ["api"],
+      "context_tokens": 1050000, "max_output_tokens": 128000, "input_usd_per_mtok": 0.1, "output_usd_per_mtok": 0.5,
+      "latency_tier": 5, "capabilities": ["text", "vision", "tools", "web_search", "file_search", "computer_use", "reasoning", "coding"],
+      "task_fitness": {"analysis": 2, "architecture": 1, "coding": 2, "debugging": 2, "testing": 3, "review": 2, "documentation": 4, "extraction": 5, "ui": 3},
+      "effort_levels": ["none", "low", "medium", "high", "xhigh", "max"], "source": "openai"
+    },
+    {
+      "id": "claude-fable-5-2", "name": "Claude Fable 5.2", "provider": "anthropic", "lifecycle": "active", "channels": ["api"],
+      "context_tokens": 1000000, "max_output_tokens": 128000, "input_usd_per_mtok": 8.0, "output_usd_per_mtok": 40.0,
+      "latency_tier": 2, "capabilities": ["text", "vision", "tools", "reasoning", "coding"],
+      "task_fitness": {"analysis": 5, "architecture": 5, "coding": 5, "debugging": 5, "testing": 5, "review": 5, "documentation": 4, "extraction": 3, "ui": 4},
+      "effort_levels": ["low", "medium", "high", "max"], "source": "anthropic"
+    },
+    {
+      "id": "claude-opus-5-5", "name": "Claude Opus 5.5", "provider": "anthropic", "lifecycle": "active", "channels": ["api"],
+      "context_tokens": 1000000, "max_output_tokens": 128000, "input_usd_per_mtok": 4.0, "output_usd_per_mtok": 20.0,
+      "latency_tier": 2, "capabilities": ["text", "vision", "tools", "reasoning", "coding"],
+      "task_fitness": {"analysis": 5, "architecture": 5, "coding": 5, "debugging": 5, "testing": 5, "review": 5, "documentation": 4, "extraction": 3, "ui": 4},
+      "effort_levels": ["low", "medium", "high", "max"], "source": "anthropic"
+    },
+    {
+      "id": "claude-sonnet-5-5", "name": "Claude Sonnet 5.5", "provider": "anthropic", "lifecycle": "active", "channels": ["api"],
+      "context_tokens": 1000000, "max_output_tokens": 128000, "input_usd_per_mtok": 2.0, "output_usd_per_mtok": 10.0,
+      "latency_tier": 4, "capabilities": ["text", "vision", "tools", "reasoning", "coding"],
+      "task_fitness": {"analysis": 4, "architecture": 4, "coding": 5, "debugging": 4, "testing": 4, "review": 4, "documentation": 4, "extraction": 4, "ui": 4},
+      "effort_levels": ["low", "medium", "high", "max"], "source": "anthropic"
+    },
+    {
+      "id": "claude-haiku-5-5", "name": "Claude Haiku 5.5", "provider": "anthropic", "lifecycle": "active", "channels": ["api"],
+      "context_tokens": 1000000, "max_output_tokens": 128000, "input_usd_per_mtok": 0.1, "output_usd_per_mtok": 0.5,
+      "price_floor_only": true, "latency_tier": 5, "capabilities": ["text", "vision", "tools", "reasoning", "coding"],
+      "task_fitness": {"analysis": 2, "architecture": 1, "coding": 2, "debugging": 2, "testing": 3, "review": 2, "documentation": 4, "extraction": 5, "ui": 3},
+      "effort_levels": ["low", "medium", "high", "max"], "source": "anthropic"
+    }
+  ]
+}
