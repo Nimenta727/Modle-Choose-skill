@@ -33,27 +33,31 @@ def compute_report(data: dict, min_samples: int = 5) -> dict:
             raise ValueError("passed must be a boolean from objective acceptance checks")
         for field in ("cost_usd", "elapsed_seconds"):
             value = row.get(field)
-            if type(value) not in (int, float) or not math.isfinite(value) or value < 0:
-                raise ValueError(f"{field} must be a finite nonnegative number")
+            if value is not None and (type(value) not in (int, float) or not math.isfinite(value) or value < 0):
+                raise ValueError(f"{field} must be null/omitted when unknown or a finite nonnegative number")
         groups[(row["task_type"], row["model_id"])].append(row)
     entries = []
     for (task_type, model_id), rows in sorted(groups.items()):
         n = len(rows)
         successful = sum(r["passed"] for r in rows)
-        cost = sum(r["cost_usd"] for r in rows)
+        measured_costs = [r["cost_usd"] for r in rows if r.get("cost_usd") is not None]
+        measured_times = [r["elapsed_seconds"] for r in rows if r.get("elapsed_seconds") is not None]
+        cost = sum(measured_costs)
         unique_tasks = len({r["task_id"] for r in rows})
         entries.append({"task_type": task_type, "model_id": model_id,
                         "samples": n, "unique_tasks": unique_tasks,
                         "accepted": successful, "acceptance_rate": round(successful / n, 4),
-                        "mean_cost_usd": round(cost / n, 4),
-                        "median_elapsed_seconds": round(median(r["elapsed_seconds"] for r in rows), 2),
-                        "cost_per_accepted_usd": round(cost / successful, 4) if successful else None,
+                        "mean_cost_usd": round(cost / len(measured_costs), 4) if measured_costs else None,
+                        "cost_samples": len(measured_costs),
+                        "median_elapsed_seconds": round(median(measured_times), 2) if measured_times else None,
+                        "time_samples": len(measured_times),
+                        "cost_per_accepted_usd": round(cost / successful, 4) if successful and len(measured_costs) == n else None,
                         "sample_sufficient": n >= min_samples and unique_tasks >= 2})
     return {"kind": "observed-task-outcomes-not-controlled-benchmark",
             "trial_count": len(run_ids), "min_samples": min_samples,
             "status": "no_empirical_trials" if not run_ids else "uncontrolled-observations",
             "groups": entries,
-            "caveat": "No cross-model ranking: compare only same tasks, equivalent environment, accepted test rubric and repeated trials. Never auto-write registry priors from these aggregates."}
+            "caveat": "Incomplete billing/time measurements are missing, not zero. No cross-model ranking: compare only same tasks, equivalent environment, accepted test rubric and repeated trials. Never auto-write registry priors from these aggregates."}
 
 
 def main() -> int:

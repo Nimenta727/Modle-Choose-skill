@@ -7,7 +7,7 @@ description: >-
   and explicitly labeled primary/backup/external advisory allocations.
 ---
 
-# Model Router — Plan Mode skill (V1.3)
+# Model Router — Plan Mode skill (V1.4)
 
 ## Required workflow
 
@@ -15,9 +15,9 @@ description: >-
 2. Identify the user's phases and deliverables, requirements, risks, budget, tool needs, surface (`api`, `claude_code`, `codex`, `chatgpt`, `claude_app`, `other`) and explicitly available native model IDs. Use `balanced` defaults when uncertain, rather than interrogating the user for optional preferences.
 3. When the registry is older than 24 hours and network access is permitted, run `scripts/update_models.py --check` to **audit** official public model pages. If inaccessible, keep the dated cache and label it stale. A successful check never silently refreshes `verified_at`, model pricing or other metadata. Consult the relevant official detail page before changing the canonical registry.
 4. For API, `scripts/check_availability.py` optionally returns `status: listed` with a timestamp and **provider**; this is not proof a model request will succeed. It never validates a subscription to ChatGPT/Codex/Claude Code. For a non-API surface, use only explicitly observed or user-reported native model IDs for primary/backup recommendations; no implicit cross-platform mapping is allowed.
-5. Apply hard filters (surface, lifecycle, allowed providers, privacy, required capabilities, context/output, hard price cap, risk threshold) before heuristic scoring. Use `scripts/route.py` when shell access exists; otherwise follow `references/routing-policy.md`. Heuristic scores are **not** external benchmark measurements.
-6. Add `Model allocation / 模型分配` from `references/plan-template.md` **inside** the technical plan, with primary/backup, effort, evidence, registry date, stage outcomes and switch triggers. When there is no known native model, output `无合格原生模型` with an explicitly non-executable `external-conditional` suggestion if useful; do not omit the user's technical plan.
-7. Reroute when tests fail twice without progress or confirmed constraints change. The Skill does **not** call models, switch accounts, purchase API credits or send code to another vendor. A separate authorized orchestrator must handle actual execution and prove access.
+5. Apply hard filters (surface, lifecycle, allowed providers, privacy, required capabilities, context/output, hard price cap, risk threshold) before heuristic scoring. For optional stage-level API cost reference, accept only *explicit* total input/output token estimates; otherwise label it unestimated. Use `scripts/route.py` when shell access exists; otherwise follow `references/routing-policy.md`. Heuristic scores are **not** external benchmark measurements; `--calibration-file` is optional and requires separately reviewed local evidence, never an unapproved trial proposal.
+6. Add `Model allocation / 模型分配` from `references/plan-template.md` **inside** the technical plan, with primary/backup, effort, evidence, registry date, stage outcomes, *API-reference cost coverage*, and switch triggers. When there is no known native model, output `无合格原生模型` with an explicitly non-executable `external-conditional` suggestion if useful; do not omit the user's technical plan.
+7. For multi-stage plans include a short **handoff contract** (inputs, decisions, outputs, acceptance evidence and unresolved items) in the plan. `scripts/handoff.py` may generate **unfilled** handoff documents; writing files requires explicit `--output-dir` and must not be an unrequested side effect. Reroute when tests fail twice without progress or confirmed constraints change. The Skill does **not** call models, switch accounts, purchase API credits or send code to another vendor. A separate authorized orchestrator must handle actual execution and prove access.
 
 ## CLI examples (Python 3.10+, standard library only)
 
@@ -47,3 +47,17 @@ For a repository checkout use `skills/model-router/scripts/route.py`, etc. Input
 ## Validation & evidence policy
 
 When reporting whether this Skill works, distinguish policy unit/eval results from real Claude Code / Codex activation. The repository's `evals/evaluate_routes.py` validates deterministic routing contracts; `evals/live_triggers.py` is an optional **explicitly authorized** account-backed smoke runner and defaults to no model calls. Its Plan Mode table checks are not proof of internal Skill activation. Read `docs/evaluation.md` in the repository for the rubric; do not invent live invocation or empirical model-quality metrics. Never auto-tune `model-registry.json` from synthetic route cases.
+
+## V1.4 commands (optional; no automatic calls)
+
+```bash
+# `estimated_input_tokens` and `estimated_output_tokens` in task stages
+# represent total estimated API usage; unknown => no fabricated cost.
+python3 scripts/route.py --task-file examples/budget-plan.json
+# Only after a human has reviewed matched real-trial evidence:
+python3 scripts/route.py --task-file examples/project-plan.json --calibration-file /path/to/reviewed.json
+# Print a stage handoff template, without writing any files:
+python3 scripts/handoff.py --task-file examples/project-plan.json
+```
+
+The root repository has `evals/compare_trials.py`, which produces `proposal_unreviewed` ONLY; it is not installed as a model-switching skill or auto-applied. Cost outputs are uncached vendor API-list illustrations, not subscription bills. Handoff templates are **unfilled**, never claimed to be actual test outcomes.

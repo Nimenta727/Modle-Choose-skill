@@ -2,7 +2,7 @@
 
 跨 Claude Code / Codex 项目可安装的 **Agent Skill**，在开发计划内分配 OpenAI 和 Anthropic 模型，同时展示证据、执行平台、备用方案、模型目录的核实时间和切换条件。
 
-**当前版本 V1.3：可靠的推荐 + 可审计模型发现 + 离线路由评测 + 可选真实 CLI 触发测试工具。它不自动执行模型调用、不切换供应商、不擅自上传项目代码。** 模型适配等级仍为策略启发式，不是实测基准排行榜。
+**当前版本 V1.4：在 V1.3 基础上增加可审查的配对真实任务评测、人工批准校准、项目 API 参考成本估算和阶段交接模板。它不自动执行模型调用、不切换供应商、不擅自上传项目代码。** `evals/trials.json` 当前为空，未产生真实模型质量排名；策略启发式分数不代表独立实测。
 
 ## 项目安装
 
@@ -125,5 +125,59 @@ python3 -m compileall -q skills/model-router/scripts scripts evals
 - V1.1（已完成）：运行环境门槛、API 列表与成功调用分离、预算/默认值一致性。
 - V1.2（已完成）：跨版本 ID 候选发现、API 清单审计、字段来源和只读定期报告。
 - V1.3（已完成评测基础设施）：24 个离线边界案例、CLI 隐式/显式/负例测试工具、真实任务结果聚合器；尚未测得真实客户端触发率或模型实际能力排名。
-- V1.4（待实测）：在授权客户端中收集同任务的重复运行结果，根据可复现实验和独立评审校准路由权重。
+- V1.4（本轮已实现工具，真实结果待采集）：配对验收结果比较、人工审核后可选校准、API 参考成本估算与阶段交接模板。
 - V2：用户明确授权后可审计的跨平台模型调度；不通过 Skill 文本偷渡权限。
+
+## V1.4：项目成本预算与阶段交接
+
+可选地在任务 JSON 的每个 `stage` 中填写**该阶段所有请求预计的 Token 总量**（不是单次 context window，也不是实际已测用量）：
+
+```json
+{
+  "name": "Implementation",
+  "type": "coding",
+  "estimated_input_tokens": 200000,
+  "estimated_output_tokens": 50000,
+  "max_stage_api_reference_usd": 1.5
+}
+```
+
+必须同时提供两个估计字段；不确定时**两个字段都省略**，报告将显示 `unestimated`，不会填假零。`max_stage_api_reference_usd` 是**可选的、仅适用于 API 标价参考的阶段硬上限**：没有 Token 估计、只有价格下限或运行平台不是 `api` 时，不会假设已满足上限。总项目金额只是已估算阶段的 API **未缓存标价参考小计**，**不是预算承诺或 Claude/ChatGPT 订阅实际费用**。默认不包含工具收费、缓存政策、区域附加费等。输入/输出 Tokens 是估计，不是计费记录。
+
+```bash
+# 路由结果包含 API 参考成本小计，缺失预计 Token 时显式显示 unknown
+python3 skills/model-router/scripts/route.py \
+  --task-file skills/model-router/examples/budget-plan.json --format markdown
+
+# 默认输出到 stdout（无文件写入）；显式指定目录后创建待填写交接文档
+python3 skills/model-router/scripts/handoff.py \
+  --task-file skills/model-router/examples/project-plan.json
+python3 skills/model-router/scripts/route.py \
+  --task-file skills/model-router/examples/project-plan.json \
+  --format json > /tmp/model-router-route.json
+python3 skills/model-router/scripts/handoff.py \
+  --task-file skills/model-router/examples/project-plan.json \
+  --route-result /tmp/model-router-route.json \
+  --output-dir /tmp/model-router-handoffs
+```
+
+交接模板保留待确认约束、成果证据、验收标准和后续输入，**不会推断已完成代码修改或测试**。已有同名文件默认拒绝覆盖；明确指定 `--force` 才允许覆盖。不要将含敏感上下文的交接文件提交至公开仓库。
+
+## V1.4：真实任务配对比较与审核校准
+
+`evals/trials.json` 仍为空；**离线策略测试 100% 不代表任何模型质量评测成绩**。录入真实任务结果时，在 `run_id`、`task_id`、`task_type`、`model_id`、`passed` 外，还需要 `surface`、固定任务代码快照 `fixture_sha256`、固定验收标准 `rubric_sha256` 和同条件测试工具环境指纹 `harness_sha256`，后 3 个为 SHA-256 64 位十六进制文本。比较至少要求 **6 个不同匹配任务、每个任务每个模型至少 2 次运行**，并使用探索性单侧符号检验。这里的检验不自动纠正多组比较，不能替代独立审核，不能用来宣称模型具备普遍优势。
+
+```bash
+python3 evals/score_trials.py --trials evals/trials.json
+python3 evals/compare_trials.py --trials evals/trials.json --json-out /tmp/model-router-proposal.json
+```
+
+比较器输出的 `proposal_unreviewed` **不能**被 `route.py` 应用。必须由人核对测试场景、接受标准、不同模型调用方式、偏差、结论及证据后，再另行创建 `status: user_reviewed`、`reviewed_at` (ISO8601 UTC 带时区) 和 `adjustments` 的 JSON。人工通过的偏移每个模型/任务类型最多 ±8 个评分点、90 天过期；只影响第二阶段**候选排序**，不绕开硬约束、风险门槛或权限验证。审核文件为用户本地资产，不随仓库默认发布；即使标记审核通过，路由器也不会独立证明证据真实性。
+
+```bash
+python3 skills/model-router/scripts/route.py \
+  --task-file skills/model-router/examples/project-plan.json \
+  --calibration-file /path/to/reviewed-calibration.json
+```
+
+本版本**没有**运行任何真实 Claude Code/Codex 账号任务，因此尚不能给出真实触发成功率、任务通过率或成本节省百分比。更多要求与人工审核样例请见 [V1.4 评测说明](docs/v1.4.md)。

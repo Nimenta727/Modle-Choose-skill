@@ -1,0 +1,15 @@
+{
+  "name": "Budget illustration — not measured usage",
+  "surface": "api",
+  "priority": "balanced",
+  "stages": [
+    {"name": "Design", "type": "architecture", "complexity": "high",
+     "deliverable": "Approved ADR and API contract",
+     "estimated_input_tokens": 80000, "estimated_output_tokens": 20000},
+    {"name": "Build", "type": "coding", "complexity": "medium",
+     "deliverable": "Implementation and tests",
+     "estimated_input_tokens": 200000, "estimated_output_tokens": 50000},
+    {"name": "Review", "type": "review", "complexity": "high",
+     "deliverable": "Verified tests and release notes"}
+  ]
+}

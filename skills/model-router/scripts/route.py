@@ -19,6 +19,8 @@ PRIORITIES = {
 }
 COMPLEXITY = {"low", "medium", "high"}
 ACCESS_TTL_HOURS = 24
+CALIBRATION_TTL_DAYS = 90
+MAX_CALIBRATION_DELTA = 8.0
 
 
 def load_json(path: Path) -> dict:
@@ -83,9 +85,15 @@ def validate_task(task: dict) -> None:
             raise ValueError(f"invalid complexity for {s['name']}")
         if s.get("risk", "normal") not in {"normal", "high", "critical"}:
             raise ValueError(f"invalid risk for {s['name']}")
-        for k in ("context_tokens", "output_tokens"):
+        for k in ("context_tokens", "output_tokens", "estimated_input_tokens", "estimated_output_tokens"):
             if type(s.get(k, 0)) is not int or s.get(k, 0) < 0:
                 raise ValueError(f"invalid {k} for {s['name']}")
+        if ("estimated_input_tokens" in s) != ("estimated_output_tokens" in s):
+            raise ValueError("estimated_input_tokens and estimated_output_tokens must be supplied together")
+        if "estimated_input_tokens" in s and s["estimated_input_tokens"] + s["estimated_output_tokens"] == 0:
+            raise ValueError("estimated token volume must be positive; omit both fields when unknown")
+        if "max_stage_api_reference_usd" in s and not nonnegative_number(s["max_stage_api_reference_usd"]):
+            raise ValueError("max_stage_api_reference_usd must be finite and nonnegative")
         capabilities = s.get("required_capabilities", [])
         if not isinstance(capabilities, list) or any(not isinstance(c, str) or not c for c in capabilities):
             raise ValueError("required_capabilities must be an array of strings")
@@ -101,6 +109,58 @@ def validate_task(task: dict) -> None:
 
 def blended_price(m: dict) -> float:
     return .8 * m["input_usd_per_mtok"] + .2 * m["output_usd_per_mtok"]
+
+
+def api_cost_unrounded(model: dict, stage: dict) -> float:
+    """The unrounded reference is used to enforce hard budget limits."""
+    return (stage["estimated_input_tokens"] * model["input_usd_per_mtok"]
+            + stage["estimated_output_tokens"] * model["output_usd_per_mtok"]) / 1_000_000
+
+
+def api_cost_estimate(model: dict, stage: dict) -> dict:
+    """Illustrative *uncached API list-price* estimate, NOT a bill or subscription price."""
+    if "estimated_input_tokens" not in stage:
+        return {"status": "unknown", "api_reference_usd": None}
+    total = api_cost_unrounded(model, stage)
+    return {"status": "lower-bound" if model.get("price_floor_only") else "api-list-reference",
+            "api_reference_usd": round(total, 6),
+            "estimated_input_tokens": stage["estimated_input_tokens"],
+            "estimated_output_tokens": stage["estimated_output_tokens"]}
+
+
+def calibration_offsets(calibration: dict | None, registry: dict, now: datetime) -> tuple[dict[tuple[str, str], float], list[str]]:
+    """Accept only an explicitly reviewed, recent user-controlled adjustment file.
+
+    This does NOT authenticate real trial measurements. A report/proposal never
+    auto-applies as an adjustment, and baseline priors remain unchanged.
+    """
+    if calibration is None:
+        return {}, []
+    if not isinstance(calibration, dict) or calibration.get("schema_version") != 1 or calibration.get("status") != "user_reviewed":
+        raise ValueError("calibration must be schema_version=1 and status=user_reviewed; proposals cannot be applied")
+    date_checked = parsed_time(calibration.get("reviewed_at"))
+    if date_checked is None or date_checked > now + timedelta(minutes=5):
+        raise ValueError("calibration requires a valid non-future reviewed_at timestamp")
+    rows = calibration.get("adjustments")
+    if not isinstance(rows, list):
+        raise ValueError("calibration adjustments must be a list")
+    offsets: dict[tuple[str, str], float] = {}
+    known = {m["id"] for m in registry["models"]}
+    for row in rows:
+        if not isinstance(row, dict) or row.get("model_id") not in known or row.get("task_type") not in TASK_TYPES:
+            raise ValueError("calibration references unknown model ID or task type")
+        value = row.get("score_delta")
+        if type(value) not in (int, float) or not math.isfinite(value) or abs(value) > MAX_CALIBRATION_DELTA:
+            raise ValueError("calibration score_delta must be within [-8,8]")
+        if not isinstance(row.get("evidence"), str) or len(row["evidence"].strip()) < 8:
+            raise ValueError("calibration adjustment requires descriptive evidence reference")
+        key = (row["model_id"], row["task_type"])
+        if key in offsets:
+            raise ValueError("duplicate calibration adjustment")
+        offsets[key] = float(value)
+    if now - date_checked > timedelta(days=CALIBRATION_TTL_DAYS):
+        return {}, ["Reviewed calibration is older than 90 days: ignored; renew the review before applying"]
+    return offsets, ["User-reviewed score offsets applied; underlying empirical evidence was NOT independently verified by the router"] if offsets else []
 
 
 def min_fitness(stage: dict) -> int:
@@ -197,6 +257,16 @@ def eligible(m: dict, s: dict, task: dict, access_level: str, user_reported: boo
         return False, "required capability missing"
     if m["task_fitness"][s["type"]] < min_fitness(s):
         return False, "below minimum task fit"
+    if "max_stage_api_reference_usd" in s:
+        if task.get("surface", "api") != "api":
+            return False, "API price cap cannot gate non-API billing"
+        estimate = api_cost_estimate(m, s)
+        if estimate["api_reference_usd"] is None:
+            return False, "stage budget requires explicit token estimates"
+        if m.get("price_floor_only"):
+            return False, "lower-bound API price cannot satisfy hard stage budget"
+        if api_cost_unrounded(m, s) > s["max_stage_api_reference_usd"]:
+            return False, "stage API budget cap exceeded"
     if "max_blended_cost_usd_per_mtok" in task:
         if m.get("price_floor_only"):
             return False, "price is only a lower bound; budget cannot be guaranteed"
@@ -215,7 +285,8 @@ def rate(m: dict, s: dict, priority: str, max_price: float) -> float:
 
 
 def route(task: dict, registry: dict, access: dict | list[dict] | None = None,
-          available: set[str] | None = None, now: datetime | None = None) -> dict:
+          available: set[str] | None = None, now: datetime | None = None,
+          calibration: dict | None = None) -> dict:
     validate_task(task)
     validate_registry(registry)
     now = now or datetime.now(timezone.utc)
@@ -224,6 +295,8 @@ def route(task: dict, registry: dict, access: dict | list[dict] | None = None,
     surface = task.get("surface", "api")
     available = available or set()
     states, warnings = access_lookup(access, surface, now)
+    offsets, calibration_warnings = calibration_offsets(calibration, registry, now)
+    warnings.extend(calibration_warnings)
     models = registry["models"]
     known = {m["id"] for m in models}
     unknown = (set(available) | {key.split(":", 1)[1] for key in states}) - known
@@ -244,11 +317,15 @@ def route(task: dict, registry: dict, access: dict | list[dict] | None = None,
                 excluded[why] = excluded.get(why, 0) + 1
                 continue
             status = evidence if evidence != "conditional" else ("user-reported" if reported else "conditional")
+            offset = offsets.get((m["id"], s["type"]), 0.0)
             candidates.append({"id": m["id"], "name": m["name"], "provider": m["provider"],
-                "score": rate(m, s, priority, price_max), "availability": status,
-                "effort": effective_effort(m, s), "reason": reason_for(m, s, priority),
+                "score": round(max(0, min(100, rate(m, s, priority, price_max) + offset)), 2),
+                "score_adjustment": offset, "availability": status,
+                "effort": effective_effort(m, s),
+                "reason": reason_for(m, s, priority) + (f"；人工审核校准 {offset:+.1f} 分（未由路由器独立复核）" if offset else ""),
                 "blended_price_usd_per_mtok": round(blended_price(m), 3),
-                "price_floor_only": m.get("price_floor_only", False)})
+                "price_floor_only": m.get("price_floor_only", False),
+                "api_cost_estimate": api_cost_estimate(m, s)})
         # A surface-specific recommendation must never silently assign a foreign API model.
         ranks = {"call-verified": 3, "listed": 2, "user-reported": 1, "conditional": 0}
         candidates.sort(key=lambda c: (-ranks[c["availability"]], -c["score"], c["id"]))
@@ -263,7 +340,7 @@ def route(task: dict, registry: dict, access: dict | list[dict] | None = None,
             for m in models:
                 ok, _ = eligible(m, s, recommendation_task, "conditional", False)
                 if ok:
-                    advisory_pool.append((rate(m, s, priority, price_max), m["id"], m["name"]))
+                    advisory_pool.append((round(rate(m, s, priority, price_max) + offsets.get((m["id"], s["type"]), 0), 2), m["id"], m["name"]))
             advisory_pool.sort(key=lambda item: (-item[0], item[1]))
             if advisory_pool:
                 _, model_id, name = advisory_pool[0]
@@ -271,7 +348,23 @@ def route(task: dict, registry: dict, access: dict | list[dict] | None = None,
                             "reason": "API candidate only; requires explicit local verification or authorized orchestrator"}
         output.append({"name": s["name"], "type": s["type"], "complexity": s.get("complexity", "medium"),
                        "deliverable": s.get("deliverable", "见实施计划"), "min_fitness": min_fitness(s),
-                       "primary": primary, "backup": backup, "external_advisory": advisory, "excluded": excluded})
+                       "primary": primary, "backup": backup, "external_advisory": advisory, "excluded": excluded,
+                       "cost_estimate": primary["api_cost_estimate"] if primary else {"status": "unknown", "api_reference_usd": None}})
+    covered = [x["cost_estimate"] for x in output if x["cost_estimate"]["api_reference_usd"] is not None]
+    lower_bound = any(e["status"] == "lower-bound" for e in covered)
+    full_coverage = len(covered) == len(output)
+    project_cost = {"status": "unestimated" if not covered else (
+        "partial" if not full_coverage else "lower-bound" if lower_bound else "api-list-reference"),
+        "api_reference_total_usd": round(sum(e["api_reference_usd"] for e in covered), 6) if covered else None,
+        "stages_estimated": len(covered), "stages_total": len(output),
+        "billing_surface": surface,
+        "disclaimer": "Uncached vendor API list-price illustration only; excludes cache discounts, tools, taxes, regional/tier charges and subscription allocation."}
+    if surface != "api" and covered:
+        warnings.append("API list-price estimates are NOT the actual cost of subscriptions or this execution surface")
+    if covered and not full_coverage:
+        warnings.append("Only some stages have token estimates; reported API reference subtotal excludes unestimated stages")
+    if lower_bound:
+        warnings.append("Some cost estimates are price floors, so totals are lower bounds, not budget guarantees")
     verified_date = datetime.fromisoformat(registry["verified_at"]).date()
     if (now.date() - verified_date).days > 1:
         warnings.append(f"Registry last verified {registry['verified_at']}; recheck official sources for models, prices and lifecycle")
@@ -284,7 +377,8 @@ def route(task: dict, registry: dict, access: dict | list[dict] | None = None,
     return {"mode": "execution-gated" if task.get("execution") else "recommendation-only", "surface": surface,
             "priority": priority, "registry_verified_at": registry["verified_at"],
             "registry_freshness": "stale" if (now.date() - verified_date).days > 1 else "cached (not live-checked)",
-            "scoring": "policy heuristic, not benchmark", "stages": output, "warnings": list(dict.fromkeys(warnings))}
+            "scoring": "policy heuristic with optional user-reviewed offsets, not benchmark", "stages": output,
+            "project_cost": project_cost, "calibration_applied": bool(offsets), "warnings": list(dict.fromkeys(warnings))}
 
 
 def render_markdown(result: dict) -> str:
@@ -304,6 +398,18 @@ def render_markdown(result: dict) -> str:
             advisory = f"{external['name']} (`{external['id']}`; external-conditional)" if external else "—"
             fields = [s["name"], s["deliverable"], "无合格原生模型", "—", "未满足平台/权限或其他硬性约束", "—", "unavailable", advisory]
         lines.append("| " + " | ".join(map(esc, fields)) + " |")
+    project_cost = result.get("project_cost", {})
+    total = project_cost.get("api_reference_total_usd")
+    lines += ["", "### Project API list-price illustration / 项目 API 参考成本",
+              f"- **Known-stage subtotal:** ${total:.6f} USD" if total is not None else "- **Cost:** unestimated (token estimates not supplied)",
+              f"- **Coverage:** {project_cost.get('stages_estimated', 0)}/{project_cost.get('stages_total', 0)} stages; status: {project_cost.get('status', 'unknown')}",
+              "- **Important:** uncached API reference pricing only, not an actual bill; other surfaces/subscriptions differ.", "",
+              "| 阶段 | API 参考成本 (USD) | 状态 |",
+              "|---|---:|---|"]
+    for stage in result["stages"]:
+        e = stage.get("cost_estimate", {})
+        usd = e.get("api_reference_usd")
+        lines.append(f"| {esc(stage['name'])} | {f'${usd:.6f}' if usd is not None else '—'} | {esc(e.get('status', 'unknown'))} |")
     lines += ["", "**Switch / escalation:** Reroute if tests fail twice without progress, constraints change, or model access changes. A model recommendation never performs a provider switch.",
               "", "**Warnings / 注意事项:**"]
     lines += [f"- {w}" for w in result["warnings"]] or ["- None reported (verify account access before execution)."]
@@ -317,13 +423,15 @@ def main() -> int:
     parser.add_argument("--available", help="Comma-separated USER-REPORTED models on the task's native surface")
     parser.add_argument("--availability-file", action="append", type=Path,
                         help="Repeatable API inventory or external successful-request evidence JSON")
+    parser.add_argument("--calibration-file", type=Path, help="Explicitly user-reviewed bounded score offsets; never auto-applies trial proposals")
     parser.add_argument("--format", choices=["json", "markdown"], default="markdown")
     args = parser.parse_args()
     try:
         task, registry = load_json(args.task_file), load_json(args.registry)
         access = [load_json(p) for p in args.availability_file] if args.availability_file else None
         available = set(filter(None, (x.strip() for x in args.available.split(",")))) if args.available else None
-        result = route(task, registry, access, available)
+        calibration = load_json(args.calibration_file) if args.calibration_file else None
+        result = route(task, registry, access, available, calibration=calibration)
     except (ValueError, KeyError, TypeError, OSError, json.JSONDecodeError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 2

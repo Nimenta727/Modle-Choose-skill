@@ -1,4 +1,4 @@
-# Routing policy — V1.2 (reliability + model discovery)
+# Routing policy — V1.4 (reliability, evidence and cost)
 
 ## 1. Hard filters before any score
 
@@ -26,7 +26,7 @@ A stale, missing, future-dated or provider-mismatched inventory is ignored (24-h
 
 The Python router uses editable 1–5 **heuristic** capability priors, not a published benchmark. `quality` / `balanced` / `cost` adjust quality/cost/speed weights. Context, risk, tool support, provider, hard budget, lifecycle and surface are gates **before** scoring. A default/omitted complexity of `medium` uses the same thresholds as explicit `medium`.
 
-Blended price is an approximate 80% input / 20% output token rate. It ignores prompt caching, tool costs, batches, subscriptions, tiered prices and actual work volume. Latency tiers are qualitative; do not interpret them as wall-clock measurements.
+Blended price is an approximate 80% input / 20% output token rate **only for ranking**. For a separate optional stage cost illustration, `estimated_input_tokens` and `estimated_output_tokens` are **total stage Token estimates across requests**, and cost is `(input*input_list_price + output*output_list_price) / 1,000,000`. If either is missing, report `unknown`, not zero; if the catalog price is a lower bound, report `lower-bound`. Total only the estimated stages and mark partial coverage. This is an uncached **API-only reference**, not a real bill for Claude Code, Codex, ChatGPT or subscriptions. It ignores caching, tool costs, batches, regional/tier charges and actual work volume. An optional `max_stage_api_reference_usd` is a hard stage cap only when tokens and a non-floor API price are known and `surface=api`; never silently relax it. Latency tiers are qualitative; do not interpret them as wall-clock measurements.
 
 | Phase | Minimum fit by complexity (low / medium / high) |
 |---|---|
@@ -44,3 +44,13 @@ Reroute when tests fail twice without progress, context or tools change, the sel
 `update_models.py` is **read-only**, including its `--check` and `--inventory-file` modes. It recognizes broader new model ID patterns, combines official page candidates with optionally supplied API inventories, and produces a review report. Missing IDs from rendered HTML are *not proof of retirement*. A reviewer must confirm provider documentation, lifecycle, price, tool support and context limits **before** editing the canonical registry and its per-field review timestamps.
 
 The scheduled weekly audit uploads a review report; it does **not** create API charges, change the registry, commit automatically, grant tool permissions or verify UI entitlement. Only report data changes can be automated safely without provenance validation. Preserve the original `verified_at` until all relevant model facts have been reviewed.
+
+## 6. Real-data calibration (explicit opt-in, V1.4)
+
+`evals/compare_trials.py` produces a **proposal only**, requiring same-task fixture, rubric, execution harness fingerprint and surface, repeated outcomes and independent human assessment. A raw proposal is never accepted by the router.
+
+A user may explicitly provide a locally reviewed `--calibration-file` with `schema_version:1`, `status:user_reviewed`, timezone-aware `reviewed_at` and `adjustments` entries `{model_id, task_type, score_delta, evidence}`. Maximum absolute delta: 8 score points; expires after 90 days. Only affects eligible-candidate ranking, **not hard task/surface/access/price filters or minimum capability gates**. This is not independently authenticated evidence; the user must verify provenance. No automatic edits to `model-registry.json`.
+
+## 7. Stage handoff integrity
+
+For stage transitions list input artifact, decisions, constraints, tests actually run and unresolved issues. `scripts/handoff.py` prints blank templates unless `--output-dir` is explicitly provided; no model invocation or project editing. Require verified evidence before marking a handoff complete; do not manufacture approval or tests.

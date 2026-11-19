@@ -23,6 +23,16 @@ jobs:
         run: |
           python evals/live_triggers.py --agent claude --max-runs 5
           python evals/live_triggers.py --agent codex --max-runs 5
+      - name: V1.4 evidence and handoff smoke (no model calls)
+        run: |
+          python evals/score_trials.py --trials evals/trials.json --output "${{ runner.temp }}/trial-score.json"
+          python evals/compare_trials.py --trials evals/trials.json --json-out "${{ runner.temp }}/paired-proposal.json"
+          python skills/model-router/scripts/route.py \
+            --task-file skills/model-router/examples/budget-plan.json \
+            --format json > "${{ runner.temp }}/budget-reference.json"
+          python skills/model-router/scripts/handoff.py \
+            --task-file skills/model-router/examples/project-plan.json \
+            > "${{ runner.temp }}/handoff-templates.md"
       - name: Upload offline eval reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -31,4 +41,8 @@ jobs:
           path: |
             ${{ runner.temp }}/routing-eval.json
             ${{ runner.temp }}/routing-eval.md
+            ${{ runner.temp }}/trial-score.json
+            ${{ runner.temp }}/paired-proposal.json
+            ${{ runner.temp }}/budget-reference.json
+            ${{ runner.temp }}/handoff-templates.md
           if-no-files-found: warn

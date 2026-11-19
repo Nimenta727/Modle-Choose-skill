@@ -81,3 +81,9 @@ GitHub Actions runs unit tests + offline evaluation, then uploads machine-readab
 V1.3 acceptance: all offline policy cases pass, test suite passes, CLI dry runs perform zero requests, positive/negative prompts are covered, and optional live runs distinguish errors from passes. Success is **implementation of a measurement apparatus**, not demonstration of high model-selection accuracy.
 
 Official implementation references: [Claude Code settings and Plan Mode](https://code.claude.com/docs/en/settings), [Claude Code CLI](https://code.claude.com/docs/en/cli-reference), [Codex agent skill evaluation](https://developers.openai.com/blog/eval-skills).
+
+## 5. V1.4: paired evidence, optional review and cost forecasting
+
+See [V1.4 methodology and use](v1.4.md). `evals/compare_trials.py` examines task-matched real pass/fail trials with 6 distinct paired tasks and at least 2 runs for each model on each task. Hashes are identifiers, not a guarantee that fixtures are real or equivalent. Results are unapproved proposals; the router refuses to apply them until the user performs an independent review and supplies a separate bounded, recent calibration file. An unadjusted one-sided sign-test p-value is exploratory and subject to multiple-comparison bias.
+
+The route's optional `estimated_input_tokens`/`estimated_output_tokens` produce only uncached API reference estimates; missing cost or timing data in trial summaries are displayed as missing, never zero. Stage handoffs are intentionally incomplete templates, not completed work products. As of the initial V1.4 release, `evals/trials.json` remains empty and no live comparative results exist.
