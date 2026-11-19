@@ -5,3 +5,6 @@ __pycache__/
 .env
 *.key
 .venv/
+local-eval-reports/
+evals/outputs/
+evals/traces/

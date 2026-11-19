@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "id": "implicit-plan-web",
+      "category": "implicit-positive",
+      "prompt": "Write an implementation plan for a small local-only to-do web app. Include phases, deliverables, verification steps, and risks. Do not implement or edit code.",
+      "expects_allocation": true
+    },
+    {
+      "id": "implicit-plan-refactor",
+      "category": "implicit-positive",
+      "prompt": "Plan a refactor of the sample Python add function into a tiny reusable package with tests. Explain stages, checks, and risk, but do not change any files.",
+      "expects_allocation": true
+    },
+    {
+      "id": "explicit-skill",
+      "category": "explicit-positive",
+      "prompt": "Use the model-router skill to produce a Plan Mode implementation plan for a small Python command-line calculator. Do not edit files.",
+      "expects_allocation": true
+    },
+    {
+      "id": "ordinary-greeting",
+      "category": "negative-control",
+      "prompt": "What does the word 'repository' mean in software development? Answer in two sentences. Do not write an implementation plan.",
+      "expects_allocation": false
+    },
+    {
+      "id": "ordinary-code-explanation",
+      "category": "negative-control",
+      "prompt": "Explain what the existing sample.py function does in one sentence. Do not plan modifications or make changes.",
+      "expects_allocation": false
+    }
+  ]
+}

@@ -2,7 +2,7 @@
 
 跨 Claude Code / Codex 项目可安装的 **Agent Skill**，在开发计划内分配 OpenAI 和 Anthropic 模型，同时展示证据、执行平台、备用方案、模型目录的核实时间和切换条件。
 
-**当前版本 V1.2：可靠的推荐 + API/平台边界 + 可审计模型发现。它不执行模型调用、不切换供应商、不擅自上传项目代码。** 模型适配等级仍为策略启发式，不是实测基准排行榜。
+**当前版本 V1.3：可靠的推荐 + 可审计模型发现 + 离线路由评测 + 可选真实 CLI 触发测试工具。它不自动执行模型调用、不切换供应商、不擅自上传项目代码。** 模型适配等级仍为策略启发式，不是实测基准排行榜。
 
 ## 项目安装
 
@@ -87,11 +87,32 @@ python3 skills/model-router/scripts/update_models.py --offline \
 
 详见 [`references/routing-policy.md`](skills/model-router/references/routing-policy.md) 和 [`references/providers.md`](skills/model-router/references/providers.md)。
 
+## V1.3 评测与真实 Plan Mode 验证
+
+新增 `evals/routing_cases.json`（24 个离线策略场景）与 `evals/evaluate_routes.py`，在 CI 中验证平台/可用性/成本/风险约束和模型分配表；所有断言是**策略契约**，不代表模型性能分数。
+
+```bash
+# 离线评测，完全免费
+python3 evals/evaluate_routes.py --json-out /tmp/router-eval.json
+
+# 默认 dry-run：不会连接 Claude/Codex，也不消费额度
+python3 evals/live_triggers.py --agent claude
+python3 evals/live_triggers.py --agent codex
+
+# 可选：在安装且登录 CLI 的电脑上，显式运行真实测试（可能消耗账号额度）
+python3 evals/live_triggers.py --agent claude --execute --max-runs 1
+python3 evals/live_triggers.py --agent codex --execute --max-runs 1
+```
+
+真实触发评测在临时空项目中安装 Skill，使用 Claude 的 Plan Mode 或 Codex 的只读非交互 CLI，覆盖隐式/显式触发及负例。**输出包含模型分配表 ≠ 能证明 Skill 一定被调用**；因此还单独统计轨迹中可观察到的 Skill 文件读取。由于 CI 没有 CLI 凭据，也没有进入交互式 Plan Mode，本仓库目前没有真实客户端触发率数据。
+
+`evals/score_trials.py` 支持汇总真实任务的验收通过率、用时和成本；`evals/trials.json` 初始为空，**没有伪造任何实测数据**。完整方法、风险和说明见 [`docs/evaluation.md`](docs/evaluation.md) 和 [`evals/quality_rubric.md`](evals/quality_rubric.md)。
+
 ## 测试
 
 ```bash
 python3 -m unittest discover -s tests -v
-python3 -m compileall -q skills/model-router/scripts scripts
+python3 -m compileall -q skills/model-router/scripts scripts evals
 ```
 
 `tests/` 包含硬性过滤、模型目录与权限状态、不同运行环境、默认值、预算、工具安装和 Plan Mode 输出契约等测试；GitHub Actions 在提交/PR 时运行。**自动化单测不能替代在真实 Claude Code/Codex 中的端到端触发测试。**
@@ -103,5 +124,6 @@ python3 -m compileall -q skills/model-router/scripts scripts
 - `docs/routine/`：每次 GitHub 变更对应的时间戳、修改内容、验证和下一步计划。
 - V1.1（已完成）：运行环境门槛、API 列表与成功调用分离、预算/默认值一致性。
 - V1.2（已完成）：跨版本 ID 候选发现、API 清单审计、字段来源和只读定期报告。
-- V1.3（下一步）：代表性真实任务评测、Claude Code/Codex 触发率评测、路由权重的量化改进。
+- V1.3（已完成评测基础设施）：24 个离线边界案例、CLI 隐式/显式/负例测试工具、真实任务结果聚合器；尚未测得真实客户端触发率或模型实际能力排名。
+- V1.4（待实测）：在授权客户端中收集同任务的重复运行结果，根据可复现实验和独立评审校准路由权重。
 - V2：用户明确授权后可审计的跨平台模型调度；不通过 Skill 文本偷渡权限。

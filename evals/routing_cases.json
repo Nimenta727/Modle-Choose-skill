@@ -1,0 +1,657 @@
+{
+  "schema_version": 1,
+  "fixed_time": "2026-11-19T14:00:00+00:00",
+  "cases": [
+    {
+      "id": "api-basic",
+      "category": "default",
+      "task": {
+        "surface": "api",
+        "priority": "balanced",
+        "stages": [
+          {
+            "name": "Stage",
+            "type": "coding",
+            "complexity": "medium",
+            "deliverable": "Artifact"
+          }
+        ]
+      },
+      "expect": {
+        "stages": [
+          {
+            "primary": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "api-low-cost-extraction",
+      "category": "cost",
+      "task": {
+        "surface": "api",
+        "priority": "cost",
+        "stages": [
+          {
+            "name": "Stage",
+            "type": "extraction",
+            "complexity": "low",
+            "deliverable": "Artifact"
+          }
+        ]
+      },
+      "expect": {
+        "stages": [
+          {
+            "primary": true,
+            "backup": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "api-critical-architecture",
+      "category": "risk",
+      "task": {
+        "surface": "api",
+        "priority": "balanced",
+        "stages": [
+          {
+            "name": "Stage",
+            "type": "architecture",
+            "complexity": "high",
+            "deliverable": "Artifact",
+            "risk": "critical"
+          }
+        ]
+      },
+      "expect": {
+        "stages": [
+          {
+            "primary": true,
+            "effort": "high"
+          }
+        ]
+      }
+    },
+    {
+      "id": "api-default-complexity",
+      "category": "default",
+      "task": {
+        "surface": "api",
+        "priority": "balanced",
+        "stages": [
+          {
+            "name": "Stage",
+            "type": "architecture",
+            "deliverable": "Artifact"
+          }
+        ]
+      },
+      "expect": {
+        "stages": [
+          {
+            "primary": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "api-explicit-medium",
+      "category": "default",
+      "task": {
+        "surface": "api",
+        "priority": "balanced",
+        "stages": [
+          {
+            "name": "Stage",
+            "type": "architecture",
+            "complexity": "medium",
+            "deliverable": "Artifact"
+          }
+        ]
+      },
+      "expect": {
+        "stages": [
+          {
+            "primary": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "api-web-tools-provider-deny",
+      "category": "capability",
+      "task": {
+        "surface": "api",
+        "priority": "balanced",
+        "stages": [
+          {
+            "name": "Stage",
+            "type": "architecture",
+            "complexity": "high",
+            "deliverable": "Artifact",
+            "required_capabilities": [
+              "web_search"
+            ]
+          }
+        ],
+        "allowed_providers": [
+          "anthropic"
+        ]
+      },
+      "expect": {
+        "stages": [
+          {
+            "primary": false,
+            "excluded_reason": "required capability missing"
+          }
+        ]
+      }
+    },
+    {
+      "id": "api-impossible-context",
+      "category": "capability",
+      "task": {
+        "surface": "api",
+        "priority": "balanced",
+        "stages": [
+          {
+            "name": "Stage",
+            "type": "coding",
+            "complexity": "medium",
+            "deliverable": "Artifact",
+            "context_tokens": 2000000
+          }
+        ]
+      },
+      "expect": {
+        "stages": [
+          {
+            "primary": false,
+            "excluded_reason": "context/output limit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "api-impossible-output",
+      "category": "capability",
+      "task": {
+        "surface": "api",
+        "priority": "balanced",
+        "stages": [
+          {
+            "name": "Stage",
+            "type": "coding",
+            "complexity": "medium",
+            "deliverable": "Artifact",
+            "output_tokens": 2000000
+          }
+        ]
+      },
+      "expect": {
+        "stages": [
+          {
+            "primary": false,
+            "excluded_reason": "context/output limit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "api-low-budget",
+      "category": "cost",
+      "task": {
+        "surface": "api",
+        "priority": "balanced",
+        "stages": [
+          {
+            "name": "Stage",
+            "type": "coding",
+            "complexity": "medium",
+            "deliverable": "Artifact"
+          }
+        ],
+        "max_blended_cost_usd_per_mtok": 1e-05
+      },
+      "expect": {
+        "stages": [
+          {
+            "primary": false,
+            "excluded_reason": "budget cap exceeded"
+          }
+        ]
+      }
+    },
+    {
+      "id": "api-only-anthropic",
+      "category": "provider",
+      "task": {
+        "surface": "api",
+        "priority": "balanced",
+        "stages": [
+          {
+            "name": "Stage",
+            "type": "coding",
+            "complexity": "medium",
+            "deliverable": "Artifact"
+          }
+        ],
+        "allowed_providers": [
+          "anthropic"
+        ]
+      },
+      "expect": {
+        "stages": [
+          {
+            "primary": true,
+            "provider": "anthropic"
+          }
+        ]
+      }
+    },
+    {
+      "id": "api-only-openai",
+      "category": "provider",
+      "task": {
+        "surface": "api",
+        "priority": "balanced",
+        "stages": [
+          {
+            "name": "Stage",
+            "type": "coding",
+            "complexity": "medium",
+            "deliverable": "Artifact"
+          }
+        ],
+        "allowed_providers": [
+          "openai"
+        ]
+      },
+      "expect": {
+        "stages": [
+          {
+            "primary": true,
+            "provider": "openai"
+          }
+        ]
+      }
+    },
+    {
+      "id": "api-missing-api-execution",
+      "category": "access",
+      "task": {
+        "surface": "api",
+        "priority": "balanced",
+        "stages": [
+          {
+            "name": "Stage",
+            "type": "coding",
+            "complexity": "medium",
+            "deliverable": "Artifact"
+          }
+        ],
+        "execution": true
+      },
+      "expect": {
+        "stages": [
+          {
+            "primary": false,
+            "excluded_reason": "successful model request not verified"
+          }
+        ]
+      }
+    },
+    {
+      "id": "codex-no-access",
+      "category": "surface",
+      "task": {
+        "surface": "codex",
+        "priority": "balanced",
+        "stages": [
+          {
+            "name": "Stage",
+            "type": "coding",
+            "complexity": "medium",
+            "deliverable": "Artifact"
+          }
+        ]
+      },
+      "expect": {
+        "stages": [
+          {
+            "primary": false,
+            "external_advisory": true,
+            "excluded_reason": "unconfirmed surface compatibility"
+          }
+        ]
+      }
+    },
+    {
+      "id": "claude-no-access",
+      "category": "surface",
+      "task": {
+        "surface": "claude_code",
+        "priority": "balanced",
+        "stages": [
+          {
+            "name": "Stage",
+            "type": "coding",
+            "complexity": "medium",
+            "deliverable": "Artifact"
+          }
+        ]
+      },
+      "expect": {
+        "stages": [
+          {
+            "primary": false,
+            "external_advisory": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "chatgpt-no-access",
+      "category": "surface",
+      "task": {
+        "surface": "chatgpt",
+        "priority": "balanced",
+        "stages": [
+          {
+            "name": "Stage",
+            "type": "coding",
+            "complexity": "medium",
+            "deliverable": "Artifact"
+          }
+        ]
+      },
+      "expect": {
+        "stages": [
+          {
+            "primary": false,
+            "external_advisory": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "claude-reported-sonnet",
+      "category": "surface",
+      "task": {
+        "surface": "claude_code",
+        "priority": "balanced",
+        "stages": [
+          {
+            "name": "Stage",
+            "type": "coding",
+            "complexity": "medium",
+            "deliverable": "Artifact"
+          }
+        ]
+      },
+      "expect": {
+        "stages": [
+          {
+            "primary": true,
+            "availability": "user-reported",
+            "primary_id": "claude-sonnet-5-5"
+          }
+        ]
+      },
+      "available": [
+        "claude-sonnet-5-5"
+      ]
+    },
+    {
+      "id": "codex-reported-sol",
+      "category": "surface",
+      "task": {
+        "surface": "codex",
+        "priority": "balanced",
+        "stages": [
+          {
+            "name": "Stage",
+            "type": "coding",
+            "complexity": "medium",
+            "deliverable": "Artifact"
+          }
+        ]
+      },
+      "expect": {
+        "stages": [
+          {
+            "primary": true,
+            "availability": "user-reported",
+            "primary_id": "gpt-6.2-sol"
+          }
+        ]
+      },
+      "available": [
+        "gpt-6.2-sol"
+      ]
+    },
+    {
+      "id": "codex-reported-execution",
+      "category": "access",
+      "task": {
+        "surface": "codex",
+        "priority": "balanced",
+        "stages": [
+          {
+            "name": "Stage",
+            "type": "coding",
+            "complexity": "medium",
+            "deliverable": "Artifact"
+          }
+        ],
+        "execution": true
+      },
+      "expect": {
+        "stages": [
+          {
+            "primary": false,
+            "excluded_reason": "successful model request not verified"
+          }
+        ]
+      },
+      "available": [
+        "gpt-6.2-sol"
+      ]
+    },
+    {
+      "id": "api-listed-not-callable",
+      "category": "access",
+      "task": {
+        "surface": "api",
+        "priority": "balanced",
+        "stages": [
+          {
+            "name": "Stage",
+            "type": "coding",
+            "complexity": "medium",
+            "deliverable": "Artifact"
+          }
+        ],
+        "execution": true
+      },
+      "expect": {
+        "stages": [
+          {
+            "primary": false
+          }
+        ]
+      },
+      "access": {
+        "surface": "api",
+        "provider": "openai",
+        "status": "listed",
+        "checked_at": "2026-11-19T13:00:00+00:00",
+        "available_models": [
+          "gpt-6.2-sol"
+        ]
+      }
+    },
+    {
+      "id": "api-request-proven",
+      "category": "access",
+      "task": {
+        "surface": "api",
+        "priority": "balanced",
+        "stages": [
+          {
+            "name": "Stage",
+            "type": "coding",
+            "complexity": "medium",
+            "deliverable": "Artifact"
+          }
+        ],
+        "execution": true
+      },
+      "expect": {
+        "stages": [
+          {
+            "primary": true,
+            "availability": "call-verified",
+            "primary_id": "gpt-6.2-sol"
+          }
+        ]
+      },
+      "access": {
+        "surface": "api",
+        "provider": "openai",
+        "status": "call_verified",
+        "method": "successful_model_request",
+        "checked_at": "2026-11-19T13:00:00+00:00",
+        "available_models": [
+          "gpt-6.2-sol"
+        ]
+      }
+    },
+    {
+      "id": "api-stale-request",
+      "category": "access",
+      "task": {
+        "surface": "api",
+        "priority": "balanced",
+        "stages": [
+          {
+            "name": "Stage",
+            "type": "coding",
+            "complexity": "medium",
+            "deliverable": "Artifact"
+          }
+        ],
+        "execution": true
+      },
+      "expect": {
+        "stages": [
+          {
+            "primary": false
+          }
+        ]
+      },
+      "access": {
+        "surface": "api",
+        "provider": "openai",
+        "status": "call_verified",
+        "method": "successful_model_request",
+        "checked_at": "2026-11-15T13:00:00+00:00",
+        "available_models": [
+          "gpt-6.2-sol"
+        ]
+      }
+    },
+    {
+      "id": "api-price-floor-cap",
+      "category": "cost",
+      "task": {
+        "surface": "api",
+        "priority": "cost",
+        "stages": [
+          {
+            "name": "Stage",
+            "type": "extraction",
+            "complexity": "low",
+            "deliverable": "Artifact"
+          }
+        ],
+        "allowed_providers": [
+          "anthropic"
+        ],
+        "max_blended_cost_usd_per_mtok": 0.3
+      },
+      "expect": {
+        "stages": [
+          {
+            "primary": false,
+            "excluded_reason": "price is only a lower bound; budget cannot be guaranteed"
+          }
+        ]
+      }
+    },
+    {
+      "id": "api-high-risk-review",
+      "category": "risk",
+      "task": {
+        "surface": "api",
+        "priority": "balanced",
+        "stages": [
+          {
+            "name": "Stage",
+            "type": "review",
+            "complexity": "high",
+            "deliverable": "Artifact",
+            "risk": "high"
+          }
+        ]
+      },
+      "expect": {
+        "stages": [
+          {
+            "primary": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "multi-stage-coverage",
+      "category": "multi-stage",
+      "task": {
+        "priority": "balanced",
+        "surface": "api",
+        "stages": [
+          {
+            "name": "Plan",
+            "type": "architecture",
+            "complexity": "high"
+          },
+          {
+            "name": "Build",
+            "type": "coding",
+            "complexity": "medium"
+          },
+          {
+            "name": "Docs",
+            "type": "documentation",
+            "complexity": "low"
+          }
+        ]
+      },
+      "expect": {
+        "stages": [
+          {
+            "primary": true
+          },
+          {
+            "primary": true
+          },
+          {
+            "primary": true
+          }
+        ]
+      }
+    }
+  ]
+}

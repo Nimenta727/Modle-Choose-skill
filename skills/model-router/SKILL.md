@@ -7,7 +7,7 @@ description: >-
   and explicitly labeled primary/backup/external advisory allocations.
 ---
 
-# Model Router — Plan Mode skill (V1.2)
+# Model Router — Plan Mode skill (V1.3)
 
 ## Required workflow
 
@@ -43,3 +43,7 @@ For a repository checkout use `skills/model-router/scripts/route.py`, etc. Input
 - Claim that a documentation check updates official prices, lifecycle, or verified timestamps.
 - Use a price-floor-only estimate to satisfy a hard budget constraint.
 - Change the user's technical deliverables, silently transmit private code across vendors, or make an unauthorized API call.
+
+## Validation & evidence policy
+
+When reporting whether this Skill works, distinguish policy unit/eval results from real Claude Code / Codex activation. The repository's `evals/evaluate_routes.py` validates deterministic routing contracts; `evals/live_triggers.py` is an optional **explicitly authorized** account-backed smoke runner and defaults to no model calls. Its Plan Mode table checks are not proof of internal Skill activation. Read `docs/evaluation.md` in the repository for the rubric; do not invent live invocation or empirical model-quality metrics. Never auto-tune `model-registry.json` from synthetic route cases.

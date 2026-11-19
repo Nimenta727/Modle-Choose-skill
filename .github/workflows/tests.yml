@@ -11,6 +11,24 @@ jobs:
         with:
           python-version: '3.12'
       - name: Compile
-        run: python -m compileall -q skills/model-router/scripts scripts
+        run: python -m compileall -q skills/model-router/scripts scripts evals
       - name: Unit tests
         run: python -m unittest discover -s tests -v
+      - name: Offline policy evaluation
+        run: |
+          python evals/evaluate_routes.py \
+            --json-out "${{ runner.temp }}/routing-eval.json" \
+            --md-out "${{ runner.temp }}/routing-eval.md"
+      - name: CLI dry-run smoke (no model calls)
+        run: |
+          python evals/live_triggers.py --agent claude --max-runs 5
+          python evals/live_triggers.py --agent codex --max-runs 5
+      - name: Upload offline eval reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-router-offline-eval
+          path: |
+            ${{ runner.temp }}/routing-eval.json
+            ${{ runner.temp }}/routing-eval.md
+          if-no-files-found: warn
