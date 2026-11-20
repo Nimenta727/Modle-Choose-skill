@@ -1,86 +1,40 @@
 ---
 name: model-router
 description: >-
-  Use when creating or revising a software implementation plan, particularly Plan Mode:
-  break work into stages and recommend OpenAI GPT or Anthropic Claude models based on
-  verified surface access, quality/cost/speed constraints, current documented models,
-  and explicitly labeled primary/backup/external advisory allocations.
+  Use before software implementation plans or Plan Mode to recommend current
+  OpenAI GPT and Anthropic Claude models for each task stage. Apply hard
+  constraints, cost and availability, explain primary/backup selection,
+  and reduce needless model switching. Recommendation is not execution.
 ---
 
-# Model Router — Plan Mode skill (V2.0 recommendation + optional runner)
+# Model Router — 计划模式模型分配 / Plan Mode Allocation
 
-## 中文使用概要 / Chinese summary
+## 中文：轻量执行流程
 
-Plan Mode 生成计划之前先读取本 Skill 的 references/ 模型目录、路由规则和输出模板；检查当前平台、账号实际能力、风险、预算及模型资料核实时间。先用硬性条件过滤，再作启发式排序，在原技术计划内展示模型主选、备用、参考成本和阶段交接要求。若当前平台无已知可用模型，必须明确标注“不可直接执行”。真实 Claude Code/Codex 调度需额外授权，**不得因读取 Skill 而自动调用模型**。
+1. 确认目标、开发阶段、实际运行环境（API / Claude Code / Codex）、任务风险、预算和账号可用权限。公开 API 模型 ID 不等于当前客户端可选模型。
+2. **优先调用本 Skill 的 scripts/route.py**，让 Python 读取模型目录和策略数据；不要每次在模型上下文中全部展开 JSON、路由策略、供应商说明。只有无法运行脚本，或需要解释特殊约束时，才按需读取 references/routing-policy.md 与 references/model-registry.json。
+3. 先过滤能力、上下文、平台、权限、安全和预算等硬条件，再按质量/成本/速度启发式排序。成本优先可设置 priority: cost；可选 minimize_switches: true 降低跨阶段模型切换，但不放宽任何硬条件。
+4. 在技术开发计划中加入**紧凑的 Model allocation / 模型分配**：阶段、交付物、主选 ID、备用 ID、推理等级、理由、访问状态、模型目录核实时间、失败切换条件。没有验证的原生模型应注明不可直接执行，不要复述整个模型注册表。
+5. 阶段交接只保留已确认决策、必要输入、验收证据和未解决问题，不重复传输全量对话、源码或工具日志。成本估算与 Token 粗估都不是实际账单。
+6. **边界**：本 Skill 不调用模型、不擅自切换供应商或花费额度。真实执行必须另行由用户批准并使用仓库级 tools/orchestrator/。没有实测配对数据不得宣称 Token 节省率或模型质量排名。
 
-## Required workflow
+## English: Progressive Disclosure
 
-1. Read this file and `references/routing-policy.md`, `references/plan-template.md`, `references/model-registry.json`, and `references/providers.md` from **this installed skill directory**.
-2. Identify the user's phases and deliverables, requirements, risks, budget, tool needs, surface (`api`, `claude_code`, `codex`, `chatgpt`, `claude_app`, `other`) and explicitly available native model IDs. Use `balanced` defaults when uncertain, rather than interrogating the user for optional preferences.
-3. When the registry is older than 24 hours and network access is permitted, run `scripts/update_models.py --check` to **audit** official public model pages. If inaccessible, keep the dated cache and label it stale. A successful check never silently refreshes `verified_at`, model pricing or other metadata. Consult the relevant official detail page before changing the canonical registry.
-4. For API, `scripts/check_availability.py` optionally returns `status: listed` with a timestamp and **provider**; this is not proof a model request will succeed. It never validates a subscription to ChatGPT/Codex/Claude Code. For a non-API surface, use only explicitly observed or user-reported native model IDs for primary/backup recommendations; no implicit cross-platform mapping is allowed.
-5. Apply hard filters (surface, lifecycle, allowed providers, privacy, required capabilities, context/output, hard price cap, risk threshold) before heuristic scoring. For optional stage-level API cost reference, accept only *explicit* total input/output token estimates; otherwise label it unestimated. Use `scripts/route.py` when shell access exists; otherwise follow `references/routing-policy.md`. Heuristic scores are **not** external benchmark measurements; `--calibration-file` is optional and requires separately reviewed local evidence, never an unapproved trial proposal.
-6. Add `Model allocation / 模型分配` from `references/plan-template.md` **inside** the technical plan, with primary/backup, effort, evidence, registry date, stage outcomes, *API-reference cost coverage*, and switch triggers. When there is no known native model, output `无合格原生模型` with an explicitly non-executable `external-conditional` suggestion if useful; do not omit the user's technical plan.
-7. For multi-stage plans include a short **handoff contract** (inputs, decisions, outputs, acceptance evidence and unresolved items) in the plan. `scripts/handoff.py` may generate **unfilled** handoff documents; writing files requires explicit `--output-dir` and must not be an unrequested side effect. Reroute when tests fail twice without progress or confirmed constraints change. The Skill does **not** call models, switch accounts, purchase API credits or send code to another vendor. A separate authorized orchestrator must handle actual execution and prove access.
+1. Identify actual execution surface, planned deliverables, risk, budget and verified native model access. Published API IDs do not prove client entitlements.
+2. **Prefer scripts/route.py** to inspect policy/registry in Python. **Do not preload every large reference into the agent context.** Read references/routing-policy.md and references/model-registry.json only when scripts cannot run or a constraint needs manual interpretation.
+3. Apply hard gates first, then heuristic quality/cost/speed ranking. Optional priority: cost and minimize_switches: true may reduce excess expense or handoffs; never bypass platform, risk or access restrictions.
+4. Add a **compact Model allocation / 模型分配** section to the original technical plan, with primary/backup IDs, effort, rationale, access confidence, catalog date and rerouting criteria.
+5. Handoff only reviewed decisions, artifacts, validation and unresolved risks. Avoid transcripts, repetitive source dumps and fabricated usage numbers.
+6. This Skill gives recommendations, not execution permission. Live CLI runs require separate user approval. No unmeasured savings or benchmark claims.
 
-## CLI examples (Python 3.10+, standard library only)
+## Portable CLI / 独立运行
 
-```bash
-# From the installed skill root (not the consuming project root):
+~~~bash
+# Paths relative to the installed Skill directory
 python3 scripts/route.py --task-file examples/project-plan.json --format markdown
-# Explicitly reported native models on the task.surface; NOT an access proof:
-python3 scripts/route.py --task-file examples/project-plan.json --available claude-sonnet-5-5
-# API model-list checks, not a successful model request:
-python3 scripts/check_availability.py --provider openai --output /tmp/openai-inventory.json
-python3 scripts/route.py --task-file examples/project-plan.json --availability-file /tmp/openai-inventory.json
-# Discovery and maintenance (no registry mutation):
-python3 scripts/update_models.py --check --report-file /tmp/model-review.json
-python3 scripts/update_models.py --offline --inventory-file /tmp/openai-inventory.json
-```
-
-For a repository checkout use `skills/model-router/scripts/route.py`, etc. Input examples default to `surface: api`, but a real Claude Code/Codex plan must explicitly set its own surface. `execution: true` only activates **route gating** and needs trusted `call_verified` evidence from a separately authorized caller. There is no actual model invocation in this project.
-
-## Never
-
-- Equate API model inventory with a successful paid request or with UI/product access.
-- Report an external conditional suggestion as a native primary or auto-selected model.
-- Claim that a documentation check updates official prices, lifecycle, or verified timestamps.
-- Use a price-floor-only estimate to satisfy a hard budget constraint.
-- Change the user's technical deliverables, silently transmit private code across vendors, or make an unauthorized API call.
-
-## Validation & evidence policy
-
-When reporting whether this Skill works, distinguish policy unit/eval results from real Claude Code / Codex activation. The repository's `tools/evals/evaluate_routes.py` validates deterministic routing contracts; `tools/evals/live_triggers.py` is an optional **explicitly authorized** account-backed smoke runner and defaults to no model calls. Its Plan Mode table checks are not proof of internal Skill activation. Read `docs/guides/evaluation.md` in the repository for the rubric; do not invent live invocation or empirical model-quality metrics. Never auto-tune `model-registry.json` from synthetic route cases.
-
-## V1.4 commands (optional; no automatic calls)
-
-```bash
-# `estimated_input_tokens` and `estimated_output_tokens` in task stages
-# represent total estimated API usage; unknown => no fabricated cost.
-python3 scripts/route.py --task-file examples/budget-plan.json
-# Only after a human has reviewed matched real-trial evidence:
-python3 scripts/route.py --task-file examples/project-plan.json --calibration-file /path/to/reviewed.json
-# Print a stage handoff template, without writing any files:
+python3 scripts/route.py --task-file examples/project-plan.json --format json
+python3 scripts/update_models.py --offline
 python3 scripts/handoff.py --task-file examples/project-plan.json
-```
+~~~
 
-The root repository has `tools/evals/compare_trials.py`, which produces `proposal_unreviewed` ONLY; it is not installed as a model-switching skill or auto-applied. Cost outputs are uncached vendor API-list illustrations, not subscription bills. Handoff templates are **unfilled**, never claimed to be actual test outcomes.
-
-
-## Optional supervised execution (repository checkout only, NOT implicit)
-
-`tools/orchestrator/prepare.py` can convert a JSON router result into an **unapproved** execution manifest. `tools/orchestrator/run.py` is an optional local CLI bridge to Claude Code or Codex. It defaults to dry-run. **Never invoke live execution from Plan Mode merely because the Skill was read or a plan was generated.** Live operation requires the user's explicit request, an approved stage, an explicit CLI model, `--execute`, and a matching stage confirmation; writes need a separate `--allow-write`. Do not silently forward previous responses across providers. See root `docs/guides/execution.md`. This Skill does not automatically install the execution bridge into other projects.
-
-
-## V2.2 checkpoint / 人工验收门槛
-
-**中文：** 可选的本地 tools/orchestrator/checkpoints.py 提供有界失败重试、阶段状态和人工审核依赖，handoff_packet.py 只为已验收阶段生成精简交接包。**Plan Mode 读取本 Skill 不代表可以调用执行器**，必须等待明确用户授权。
-
-**English:** Optional checkpoint and compact-handoff utilities live in the host repository's tools/orchestrator/. They require explicit operator approval and do not form part of the portable Skill's automatic Plan Mode behavior. No model call, retry, cross-provider data share, or cost is authorized merely by loading this Skill.
-
-
-## Token 优化与质量门槛 / Token efficiency and quality gates
-
-- **中文：** Plan Mode 优先列出要读的关键文件路径（`context_files`），避免复制仓库、历史会话和冗余工具日志。可选 `minimize_switches: true` 仅在仍满足风险、能力、预算与权限硬约束且评分差小时尽量沿用前一模型。路由结果的模型切换次数不是实际 Token 节省的证据。
-- **English:** Prefer targeted repo-relative path hints, short verified summaries, and reviewed handoffs over replaying all source files or transcripts. Model continuity is opt-in and can never override hard filters. Do not equate a shorter prompt or fewer reported transitions with measured provider savings.
-- 本地执行器默认限制初始提示词 6000 字符、人工交接 1500 字符及 Claude 6 轮；可显式调高。**Codex 轮次没有对应硬上限**。预算超限时拒绝执行，不丢弃用户要求。/ The local runner uses enforceable character caps and a configurable Claude turn limit; Codex has no equivalent enforced cap. Over-budget inputs fail closed.
+**按需参考 / On-demand references:** references/routing-policy.md, references/plan-template.md, references/model-registry.json, references/providers.md. Additional bilingual guidance in the source repository: docs/guides/token-efficiency.md and docs/guides/execution.md. Model metadata can become stale; availability must be checked on the actual execution surface. / 目录数据与账号权限必须分别核实。
