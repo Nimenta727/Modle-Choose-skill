@@ -116,6 +116,6 @@ tests/                     Unit and release tests
 
 ## 版权与使用 / Licensing and Use
 
-目前仓库尚未声明开源许可证；**公开可读不等于自动授予转载、修改或再分发权限**。正式选择许可证需由版权持有人确认。 / No open-source license has yet been declared; public visibility alone does not grant third-party redistribution rights. The copyright owner should approve a license before broad open-source reuse.
+本项目现采用 **Apache License 2.0（2004 年 1 月）** 开源。允许在遵守许可证条件的情况下使用、修改和再分发；分发时请保留许可证和适用的版权/归属声明，并标明修改。完整英文原文见 [LICENSE](LICENSE)，SPDX 标识为 `Apache-2.0`。中文说明不是官方法律文本。 / This project is licensed under the **Apache License, Version 2.0 (January 2004)**. Use, modification and redistribution are permitted subject to its conditions, including license and applicable notice retention and marking changed files. See the authoritative English [LICENSE](LICENSE); SPDX: `Apache-2.0`.
 
 供应商模型与价格快照有独立核实日期；本次发行不会将其自动刷新为当前事实。 / Provider model and pricing snapshots retain their own review dates; publishing a new release does not refresh those facts.

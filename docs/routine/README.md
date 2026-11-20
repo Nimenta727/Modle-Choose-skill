@@ -13,6 +13,8 @@
 
 所有原始历史文件保留在本目录；为尊重时间线，不将新功能或新测试结果追写进旧记录。
 
+原始日志中关于“尚未选择许可证”的表述是当时的历史事实，不代表当前状态。自 v2.3.0-rc.2 起，项目采用 [Apache License 2.0](../../LICENSE)；早期 GitHub Release 附件仍保留原样。
+
 ## English
 
 All dated repository-change records are preserved here. **Historical entries are not silently rewritten into current facts**: older CLI paths, test results, pricing snapshots and planned work describe their original dates. Release documentation now points to the [README](../../README.md), [current guides](../README.md) and [release guide](../guides/release.md). Every future GitHub modification must include a same-commit bilingual routine entry documenting changes, observed checks and next steps.
@@ -25,3 +27,5 @@ All dated repository-change records are preserved here. **Historical entries are
 - **2026-11-20 release preparation:** Reproducible packages, docs preflight, security and contributing guides, release candidate.
 
 All original routine files remain. New capabilities and test claims are documented in *new* entries, preserving historical integrity.
+
+The earlier entries describing an unlicensed repository reflect their historical context. Starting with v2.3.0-rc.2, this project uses the [Apache License 2.0](../../LICENSE). Older Release assets have not been modified.

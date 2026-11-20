@@ -18,8 +18,9 @@
 | 打包、验签与发行 | [Release 指南](guides/release.md) |
 | 版本历史 | [CHANGELOG](../CHANGELOG.md) / [逐次日志](routine/README.md) |
 | 安全和贡献 | [SECURITY](../SECURITY.md) / [CONTRIBUTING](../CONTRIBUTING.md) |
+| 开源许可证 | [Apache License 2.0](../LICENSE) |
 
-**当前目标版本：v2.3.0-rc.1**。它是候选版本，不代表真实 Claude Code/Codex 客户端或模型质量已经通过生产环境验收。
+**当前目标版本：v2.3.0-rc.2**。它是候选版本，不代表真实 Claude Code/Codex 客户端或模型质量已经通过生产环境验收。
 
 ## English
 
@@ -39,5 +40,6 @@ These are the **current**, bilingual Model Router guides. Historical implementat
 | Release installation | [Release guide](guides/release.md) |
 | Changes | [CHANGELOG](../CHANGELOG.md) / [Dated logs](routine/README.md) |
 | Security and contribution | [SECURITY](../SECURITY.md) / [CONTRIBUTING](../CONTRIBUTING.md) |
+| Open-source license | [Apache License 2.0](../LICENSE) |
 
-**Target version: v2.3.0-rc.1**, a release candidate; production authentication and model-quality benchmarks remain unverified.
+**Target version: v2.3.0-rc.2**, a release candidate; production authentication and model-quality benchmarks remain unverified.

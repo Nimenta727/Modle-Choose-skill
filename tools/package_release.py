@@ -15,7 +15,7 @@ from zipfile import ZipFile, ZipInfo, ZIP_DEFLATED, BadZipFile
 ROOT = Path(__file__).resolve().parents[1]
 FIXED_ZIP_TIME = (2020, 1, 1, 0, 0, 0)
 REQUIRED = {
-    "SKILL.md", "references/model-registry.json",
+    "SKILL.md", "LICENSE", "references/model-registry.json",
     "references/routing-policy.md", "references/plan-template.md",
     "references/providers.md", "scripts/route.py",
     "scripts/update_models.py", "scripts/check_availability.py",
@@ -51,7 +51,7 @@ def collect_sources(root: Path = ROOT) -> list[tuple[str, bytes]]:
             continue
         relative = path.relative_to(source).as_posix()
         if (any(part.startswith(".") for part in path.relative_to(source).parts)
-                or "__pycache__" in path.parts or path.suffix not in ALLOWED_SUFFIXES):
+                or "__pycache__" in path.parts or (path.suffix not in ALLOWED_SUFFIXES and relative != "LICENSE")):
             raise ValueError(f"unsupported file in portable Skill: {relative}")
         if path.stat().st_size > 1_000_000:
             raise ValueError(f"file exceeds 1 MB release limit: {relative}")
@@ -62,6 +62,9 @@ def collect_sources(root: Path = ROOT) -> list[tuple[str, bytes]]:
     missing = REQUIRED - seen
     if missing:
         raise ValueError(f"portable Skill is incomplete: {sorted(missing)}")
+    if (root / "LICENSE").is_file() and (source / "LICENSE").is_file():
+        if (root / "LICENSE").read_bytes() != (source / "LICENSE").read_bytes():
+            raise ValueError("root and portable Skill LICENSE texts differ")
     return files
 
 

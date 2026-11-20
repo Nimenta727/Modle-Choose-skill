@@ -1,11 +1,12 @@
 {
   "schema_version": 1,
   "skill": "model-router",
-  "version": "2.3.0-rc.1",
-  "tag": "v2.3.0-rc.1",
+  "version": "2.3.0-rc.2",
+  "tag": "v2.3.0-rc.2",
   "channel": "prerelease",
   "runtime": "Python >=3.10",
   "distribution": "standalone-skill-zip",
   "tested_scope": "offline unit/policy/packaging",
-  "live_clients_verified": false
+  "live_clients_verified": false,
+  "license": "Apache-2.0"
 }

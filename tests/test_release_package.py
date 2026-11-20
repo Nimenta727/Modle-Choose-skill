@@ -24,6 +24,7 @@ class ReleasePackageTests(unittest.TestCase):
         self.assertGreaterEqual(len(source), 9)
         self.assertTrue(all(path.startswith("model-router/") for path, _ in source))
         self.assertTrue(any(path == "model-router/SKILL.md" for path, _ in source))
+        self.assertEqual(dict(source)["model-router/LICENSE"], (ROOT / "LICENSE").read_bytes())
         self.assertFalse(any("orchestrator" in path or "/evals/" in path for path, _ in source))
 
     def test_deterministic_archive_and_checksum(self):
@@ -39,6 +40,7 @@ class ReleasePackageTests(unittest.TestCase):
             with ZipFile(archive) as zf:
                 self.assertIn("model-router/RELEASE.json", zf.namelist())
                 self.assertIn("model-router/SKILL.md", zf.namelist())
+                self.assertEqual(zf.read("model-router/LICENSE"), (ROOT / "LICENSE").read_bytes())
 
     def test_refuse_overwrite(self):
         with tempfile.TemporaryDirectory() as td:

@@ -2,6 +2,13 @@
 
 ## 中文
 
+### v2.3.0-rc.2 — Apache-2.0 开源许可
+
+- 正式采用 Apache License 2.0（2004 年 1 月），添加根目录及可移植 Skill 的完整英文 LICENSE。
+- 更新 README、贡献指南、发行说明与校验测试；新的 rc.2 发行包内附许可证。
+- 旧的 rc.1 Release 和历史 routine 记录不改写。
+
+
 ### v2.3.0-rc.1 — 整理与候选发行
 
 - 采用稳定的 `skills/`、`tools/`、`docs/` 和 `tests/` 结构，保留独立可安装的 Skill。
@@ -21,6 +28,13 @@
 原始变更证据保存在 [docs/routine/](docs/routine/README.md)；历史记录不代表当前代码路径和客户端可用性。
 
 ## English
+
+### v2.3.0-rc.2 — Apache-2.0 licensing
+
+- Adopted the Apache License, Version 2.0 (January 2004), with the full English LICENSE at the repository root and in the standalone Skill.
+- Updated README, contributor guidance, release notes and archive tests; the rc.2 ZIP includes the license.
+- Preserved the prior rc.1 Release and dated historical records without rewriting them.
+
 
 ### v2.3.0-rc.1 — Consolidation and release candidate
 
