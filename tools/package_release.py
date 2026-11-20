@@ -43,6 +43,8 @@ def collect_sources(root: Path = ROOT) -> list[tuple[str, bytes]]:
     files = []
     seen = set()
     for path in sorted(source.rglob("*")):
+        if "__pycache__" in path.relative_to(source).parts or path.suffix in (".pyc", ".pyo"):
+            continue
         if path.is_symlink():
             raise ValueError(f"symlinks are excluded from releases: {path}")
         if path.is_dir():

@@ -1,0 +1,60 @@
+name: publish-model-router-release-candidate
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'release/publish-v2.3.0-rc.1.md'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: model-router-release-candidate
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.repository == 'Nimenta727/Modle-Choose-skill'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check version and release channel
+        run: |
+          python - <<'PY'
+          import json
+          meta = json.load(open('release/version.json', encoding='utf-8'))
+          assert meta['tag'] == 'v2.3.0-rc.1', 'unexpected release tag'
+          assert meta['channel'] == 'prerelease', 'unexpected release channel'
+          assert meta['live_clients_verified'] is False, 'unverified clients must not be marked verified'
+          PY
+      - name: Compile and full offline test suite
+        run: |
+          python -m compileall -q skills/model-router/scripts tools
+          python -m unittest discover -s tests -v
+          python tools/evals/evaluate_routes.py
+          python tools/check_docs.py
+      - name: Build reproducible standalone asset
+        run: |
+          python tools/package_release.py --output-dir "$RUNNER_TEMP/release"
+          python tools/package_release.py --verify "$RUNNER_TEMP/release/model-router-skill-v2.3.0-rc.1.zip"
+          cd "$RUNNER_TEMP/release"
+          sha256sum -c model-router-skill-v2.3.0-rc.1.zip.sha256
+      - name: Publish GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag='v2.3.0-rc.1'
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $tag already exists; refusing to overwrite or republish."
+            exit 0
+          fi
+          gh release create "$tag" \
+            "$RUNNER_TEMP/release/model-router-skill-v2.3.0-rc.1.zip" \
+            "$RUNNER_TEMP/release/model-router-skill-v2.3.0-rc.1.zip.sha256" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title 'Model Router v2.3.0-rc.1 / 候选发行版' \
+            --notes-file release/notes.md \
+            --prerelease

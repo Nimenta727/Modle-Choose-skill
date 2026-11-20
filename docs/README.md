@@ -2,44 +2,42 @@
 
 ## 中文
 
-本目录存放当前有效的**中英文双语**文档，按主题维护，避免多个版本的重复说明。以下链接均从本文件所在目录出发。
+这是 Model Router **当前有效**的双语文档；旧版变更仅保存在历史日志。Skill 自身可以独立安装，仓库级执行器属于另行授权的可选组件。
 
-| 文档 | 内容 |
+| 主题 | 资料 |
 |---|---|
-| [架构](architecture.md) | 源码职责、目录边界、数据流 |
-| [安装与模型路由](guides/setup.md) | 安装、配置、推荐命令 |
-| [执行与安全](guides/execution.md) | CLI 调度、审批、写入与交接 |
-| [评测](guides/evaluation.md) | 离线契约、真实触发和真实任务验证 |
-| [校准与成本](guides/calibration.md) | 配对证据、API 成本、交接模板 |
-| [目录维护](guides/catalog.md) | 来源、数据时效与只读审计 |
-| [变更历史](routine/README.md) | 保留每次修改的日志与下一步规划 |
+| 项目概览 | [双语 README](../README.md) |
+| 工程结构 | [架构与数据流](architecture.md) |
+| 安装与模型选择 | [安装指南](guides/setup.md) |
+| 执行权限和交接 | [安全执行](guides/execution.md) |
+| 降低 Token 成本 | [Token 优化指南](guides/token-efficiency.md) |
+| 验收和模型比较 | [评测指南](guides/evaluation.md) |
+| 校准与 API 成本 | [校准指南](guides/calibration.md) |
+| 模型目录来源 | [目录维护](guides/catalog.md) |
+| 开源方案借鉴 | [设计参考](guides/open-source-patterns.md) |
+| 打包、验签与发行 | [Release 指南](guides/release.md) |
+| 版本历史 | [CHANGELOG](../CHANGELOG.md) / [逐次日志](routine/README.md) |
+| 安全和贡献 | [SECURITY](../SECURITY.md) / [CONTRIBUTING](../CONTRIBUTING.md) |
 
-旧的 docs/v1.4.md、docs/v2.0-execution.md、docs/evaluation.md 已并入主题指南并删除。历史日志中的旧命令仅供追溯。
+**当前目标版本：v2.3.0-rc.1**。它是候选版本，不代表真实 Claude Code/Codex 客户端或模型质量已经通过生产环境验收。
 
 ## English
 
-Current **bilingual** documentation is organized by topic rather than release number.
+These are the **current**, bilingual Model Router guides. Historical implementation details remain in the dated logs. The Skill is independently installable; the host-side runner requires separate authorization.
 
-| Guide | Purpose |
+| Topic | Guide |
 |---|---|
-| [Architecture](architecture.md) | Source boundaries and data flow |
-| [Setup and routing](guides/setup.md) | Install, configure and route |
-| [Execution and safety](guides/execution.md) | CLI approvals, writes and handoffs |
-| [Evaluation](guides/evaluation.md) | Policy tests, live activation and task outcomes |
-| [Calibration and cost](guides/calibration.md) | Matched evidence, API references and handoffs |
-| [Catalog maintenance](guides/catalog.md) | Model provenance and read-only audits |
-| [Change history](routine/README.md) | Dated change records and next steps |
+| Overview | [Bilingual README](../README.md) |
+| Architecture | [Architecture](architecture.md) |
+| Setup and routing | [Setup](guides/setup.md) |
+| Execution safety | [Execution](guides/execution.md) |
+| Token efficiency | [Token guide](guides/token-efficiency.md) |
+| Evaluation | [Evaluation guide](guides/evaluation.md) |
+| Calibration and costs | [Calibration](guides/calibration.md) |
+| Model provenance | [Catalog](guides/catalog.md) |
+| Open-source design | [Patterns](guides/open-source-patterns.md) |
+| Release installation | [Release guide](guides/release.md) |
+| Changes | [CHANGELOG](../CHANGELOG.md) / [Dated logs](routine/README.md) |
+| Security and contribution | [SECURITY](../SECURITY.md) / [CONTRIBUTING](../CONTRIBUTING.md) |
 
-Former docs/v1.4.md, docs/v2.0-execution.md and docs/evaluation.md have been consolidated and removed. Historical commands are archival.
-
-
-## 新增专题 / New research guide
-
-- [开源方案对照与设计取舍 / Open-source patterns and tradeoffs](guides/open-source-patterns.md) — LiteLLM、LangGraph、Aider、AutoGen、Claude Code、OpenHands：哪些设计已采纳、哪些还不应引入。 / What was adopted and deliberately left out.
-
-
-## Token 优化指南 / Token efficiency guide
-
-**中文：** [Token 成本优化](guides/token-efficiency.md) 介绍按需读取、字符预算、轮次控制和连续性路由。
-
-**English:** Read [Token efficiency](guides/token-efficiency.md) for path-only context hints, budgets, turn limits and opt-in model continuity.
+**Target version: v2.3.0-rc.1**, a release candidate; production authentication and model-quality benchmarks remain unverified.

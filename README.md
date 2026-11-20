@@ -1,125 +1,121 @@
-# Model Router — 智能模型选择与受控执行 / Intelligent Model Routing
+# Model Router — 智能模型路由 / Intelligent Model Routing
 
-> 中文：一个用于 Claude Code / Codex 的可移植 Agent Skill，为开发计划分配合适的模型，并提供**可选、需逐阶段授权**的本地执行器。  
-> English: A portable Agent Skill that assigns appropriate models in software plans, with an **optional, explicitly approved** local Claude Code / Codex runner.
+> **v2.3.0-rc.1 — Release Candidate / 候选发行版**  
+> 一个轻量、可独立安装的 Agent Skill：为软件开发计划分配模型，并提供需单独授权的 Claude Code / Codex 执行工具。  
+> A lightweight, standalone Agent Skill for assigning models to software-development stages, with a separately authorized Claude Code / Codex execution bridge.
 
-**状态 / Status:** V2.1 repository consolidation. Offline policy tests and dry-run tools are implemented. Actual authenticated cross-provider runs, activation rates and empirical model rankings remain **unverified**. / 已实现离线路由与预览工具，真实登录客户端的执行、自动触发率与实测模型排名仍待验证。
+**状态 / Status:** 离线单元测试和策略评测是当前验证范围；真实登录客户端的跨模型执行、触发率和 Token 节省百分比**尚无实测证明**。 / Offline tests and routing contracts are the verified scope; authenticated cross-model execution, activation rates and percentage token savings remain **unmeasured**.
 
 ## 中文
 
-### 功能及边界
+### 主要能力
 
-- **智能推荐**：按当前平台、权限证据、任务复杂度、成本和工具能力筛选主选与备用模型，给出推荐原因与模型目录时间。
-- **计划集成**：安装 Skill 后，引导 AI 在 Plan Mode 中添加模型分工；是否真正自动触发取决于具体工具，尚无真实客户端数据。
-- **受控执行**：将路由结果转为默认未批准的分阶段清单。默认只预览；真实执行必须先安装登录 CLI、确认实际模型名称并明确批准每个阶段。
-- **评测与交接**：支持离线策略测试、真实任务记录、人工审核校准、API 标价成本估算和待填写的交接文档。
-- **限制**：路由建议不等于执行许可；API 模型列表不等于成功调用；仅有模拟测试不能证明真实 CLI 可用。不会自动推送、部署或跨供应商传输完整日志。
+- **分阶段路由**：先检查运行平台、可用性、功能、上下文、风险和预算，再选择主选/备用模型。能力分数属于启发式策略，并非第三方基准测试。
+- **Token 节省策略**：Skill 精简、按需读取参考、路径提示而不是重复粘贴全文、阶段提示词与交接字符限制、可选模型连续性、可观察的 CLI 用量统计。
+- **人工监督执行**：`tools/orchestrator/` 可选；生成的执行清单默认未批准，运行器默认仅预览。调用真实模型需要逐阶段批准、指定当前 CLI 可用模型和 `--execute`。写入与跨供应商交接需要额外授权。
+- **评测与审计**：离线策略契约、可选真实客户端测试、阶段状态记录、最小化交接、参考成本估算和只读模型目录审计。
 
-### 项目结构
+### 安装（克隆源码）
 
-~~~text
-skills/model-router/       可独立安装的 Skill、规则、模型目录及脚本
-tools/install.py           项目 Skill 安装器
-tools/evals/               离线评测与可选 CLI 实测工具
-tools/orchestrator/        需要人工授权的本地执行调度器
-tests/                     单元、结构和文档验证
-docs/                      双语索引、架构说明和按主题分类的指南
-docs/routine/              按时间记录的修改日志，保留历史
-.github/workflows/         CI 和只读目录审计
-~~~
+要求 **Python 3.10+**，本仓库工具仅使用标准库。在仓库根目录执行：
 
-### 快速开始
+```bash
+python3 tools/install.py --target /path/to/your-project
+# 只安装 Claude Code / Claude Code only
+python3 tools/install.py --target /path/to/your-project --agents claude
+# 只安装 Codex / Codex only
+python3 tools/install.py --target /path/to/your-project --agents codex
+```
 
-要求 Python 3.10+；本仓库代码仅使用 Python 标准库。在仓库根目录执行：
+安装器默认不会覆盖已有 Skill。Windows PowerShell 可使用 `py -3` 替换 `python3`。如果使用 GitHub Release 的独立 ZIP，解压后将 `model-router/` 复制到项目 `.agents/skills/` 或 `.claude/skills/`；ZIP **不含**仓库级执行器。
 
-~~~bash
-# 安装到你的项目
-python3 tools/install.py --target /path/to/project
+### 快速体验（不消费模型额度）
 
-# 模型建议（不调用模型）
-python3 skills/model-router/scripts/route.py --task-file skills/model-router/examples/project-plan.json --format markdown
-
-# 离线测试
+```bash
+python3 skills/model-router/scripts/route.py --task-file skills/model-router/examples/token-efficient-plan.json --format markdown
 python3 tools/evals/evaluate_routes.py
 python3 -m unittest discover -s tests -v
+```
 
-# 创建未批准执行清单，随后仅预览
+默认执行器预览：
+
+```bash
 python3 skills/model-router/scripts/route.py --task-file skills/model-router/examples/project-plan.json --format json > routing-result.json
 python3 tools/orchestrator/prepare.py --task-file skills/model-router/examples/project-plan.json --route-file routing-result.json --output local-execution.json
 python3 tools/orchestrator/run.py --manifest local-execution.json --workspace . --all
-~~~
+```
 
-在 Windows PowerShell 中可把 python3 换成 py -3。执行真实模型任务必须遵循 [执行指南](docs/guides/execution.md)，可能消耗 API 额度或订阅用量。**默认预览命令不会发起模型请求。**
+**这三条命令只规划和预览，不会调用模型。** 不要把账号密钥、私有模型对话或包含私密代码的任务清单提交到公开仓库。
 
-### 当前有效文档
+### 文档与发行
 
-[文档索引](docs/README.md) · [架构说明](docs/architecture.md) · [安装与使用](docs/guides/setup.md) · [执行与安全](docs/guides/execution.md) · [模型评测](docs/guides/evaluation.md) · [成本与校准](docs/guides/calibration.md) · [模型目录维护](docs/guides/catalog.md) · [修改日志](docs/routine/README.md)
+[文档索引](docs/README.md) · [架构](docs/architecture.md) · [安装指南](docs/guides/setup.md) · [执行与安全](docs/guides/execution.md) · [Token 优化](docs/guides/token-efficiency.md) · [评测](docs/guides/evaluation.md) · [发行说明](docs/guides/release.md) · [修改历史](docs/routine/README.md)
 
-**迁移说明**：旧的 scripts/install.py、evals/、orchestrator/ 入口已迁移到 tools/；docs/v1.4.md、docs/v2.0-execution.md、docs/evaluation.md 已合并为主题指南并删除。独立 Skill 内的 scripts/ **保留原路径**，历史 routine 日志保留。
+**发行资产**：`model-router-skill-v2.3.0-rc.1.zip`、同名 `.sha256` 校验文件和中英文 Release Notes。建议先试用候选版，再根据真实 Claude Code/Codex 运行结果决定正式稳定版。
 
 ## English
 
-### Capabilities and boundaries
+### Capabilities
 
-- **Recommendations:** Filter by execution surface, model access evidence, complexity, budget and capabilities. Show primary/backup choices, rationale and registry verification age.
-- **Plan integration:** Installed Skills can instruct Plan Mode to include a model allocation table. Automatic activation has not been measured on authenticated clients.
-- **Supervised execution:** Convert a routing result into an initially unapproved stage manifest. Preview is the default. A live stage requires a locally installed/authenticated CLI, an explicit CLI model and per-stage approval.
-- **Evaluation and handoff:** Offline policy contracts, opt-in real-task records, human-reviewed calibration, list-price API reference estimates and blank handoff templates.
-- **Limitations:** Recommendations are not permissions. API inventory is not a successful request, and simulated adapter tests do not prove client availability. No automatic git push, deployment or unrestricted cross-provider transcript sharing.
+- **Stage-aware routing:** Apply hard execution-surface, entitlement, feature, context, risk and budget constraints before proposing primary/backup models. Scores are heuristics, **not empirical benchmarks**.
+- **Token efficiency:** Compact Skill instructions, progressive reference loading, file-path hints instead of full source reposting, prompt/handoff character caps, opt-in model continuity and numeric CLI usage reports.
+- **Supervised execution:** Optional `tools/orchestrator/` bridge. Manifests are unapproved by default; the runner previews without model calls. Live stages require explicit model choice, approval and `--execute`. Writes and cross-provider handoffs need further consent.
+- **Evaluation:** Offline policy tests, optional authenticated-client probes, checkpoints, reviewed handoffs, reference cost estimates and read-only model catalog audits.
 
-### Layout
+### Install from source
 
-~~~text
-skills/model-router/       Standalone installable Skill and model registry
-tools/install.py           Installer for consuming projects
-tools/evals/               Policy evaluation and optional real CLI probes
-tools/orchestrator/        Supervised local stage runner
-tests/                     Unit, layout and documentation checks
-docs/                      Bilingual index, architecture and topic guides
-docs/routine/              Preserved dated change history
-.github/workflows/         CI and read-only catalog review
-~~~
+Requires **Python 3.10+**, using only the standard library. From the checkout root:
 
-### Quick start
+```bash
+python3 tools/install.py --target /path/to/your-project
+python3 tools/install.py --target /path/to/your-project --agents claude
+python3 tools/install.py --target /path/to/your-project --agents codex
+```
 
-Python 3.10+ and the standard library suffice. From the repository root:
+Existing Skills are not silently overwritten. On Windows use `py -3`. Alternatively, extract the standalone Release ZIP and copy `model-router/` to a consuming project's `.agents/skills/` or `.claude/skills/`. The ZIP deliberately excludes host-side orchestration tools.
 
-~~~bash
-python3 tools/install.py --target /path/to/project
-python3 skills/model-router/scripts/route.py --task-file skills/model-router/examples/project-plan.json --format markdown
+### Zero-cost offline quick start
+
+```bash
+python3 skills/model-router/scripts/route.py --task-file skills/model-router/examples/token-efficient-plan.json --format markdown
 python3 tools/evals/evaluate_routes.py
 python3 -m unittest discover -s tests -v
+```
 
-# Generate an unapproved manifest, then preview with zero model calls
+For an unapproved **dry-run-only** execution preview:
+
+```bash
 python3 skills/model-router/scripts/route.py --task-file skills/model-router/examples/project-plan.json --format json > routing-result.json
 python3 tools/orchestrator/prepare.py --task-file skills/model-router/examples/project-plan.json --route-file routing-result.json --output local-execution.json
 python3 tools/orchestrator/run.py --manifest local-execution.json --workspace . --all
-~~~
+```
 
-On Windows use py -3 in place of python3. Live execution may consume credits or subscription usage and requires [explicit approval](docs/guides/execution.md).
+These commands do **not** call paid models. Never commit credentials, private chat traces or sensitive project manifests to a public repository.
 
-### Documentation
+### Documentation and releases
 
-[Documentation index](docs/README.md) · [Architecture](docs/architecture.md) · [Setup](docs/guides/setup.md) · [Execution & safety](docs/guides/execution.md) · [Evaluation](docs/guides/evaluation.md) · [Calibration & costs](docs/guides/calibration.md) · [Catalog](docs/guides/catalog.md) · [Change history](docs/routine/README.md)
+[Documentation index](docs/README.md) · [Architecture](docs/architecture.md) · [Setup](docs/guides/setup.md) · [Execution and safety](docs/guides/execution.md) · [Token efficiency](docs/guides/token-efficiency.md) · [Evaluation](docs/guides/evaluation.md) · [Release guide](docs/guides/release.md) · [History](docs/routine/README.md)
 
-**Migration:** Repository utilities moved from scripts/install.py, evals/ and orchestrator/ into tools/. Former version-numbered docs were consolidated under docs/guides/ and deleted. Portable Skill scripts remain at the same paths; historical routine logs are retained.
+**Release assets:** `model-router-skill-v2.3.0-rc.1.zip` with a separate SHA-256 checksum and bilingual notes. This is a **release candidate**, not a claim of production-proven authenticated CLI integration.
 
-## 官方来源 / Official Sources
+## 代码结构 / Repository Layout
 
-[OpenAI model docs](https://developers.openai.com/api/docs/models) · [Anthropic model docs](https://platform.claude.com/docs/en/models/overview) · [Claude Code Skills](https://code.claude.com/docs/en/skills) · [Codex Skills](https://developers.openai.com/codex/skills)
+```text
+skills/model-router/       Portable Skill, routing scripts and model snapshot
+tools/install.py           Local project installer
+tools/orchestrator/        Optional supervised CLI and checkpoints
+tools/evals/               Offline and opt-in live evaluation tools
+tools/package_release.py  Reproducible standalone Skill ZIP
+tools/check_docs.py        Bilingual/link preflight
+release/                   Version metadata and release notes
+docs/guides/               Bilingual topic guides
+docs/routine/              Historical records, preserved and indexed
+tests/                     Unit and release tests
+.github/workflows/         CI, audit and gated release publication
+```
 
-The model registry has its own verification date; editing these docs does not refresh model metadata. / 文档更新时间并不代表模型数据已实时核实。
+## 版权与使用 / Licensing and Use
 
+目前仓库尚未声明开源许可证；**公开可读不等于自动授予转载、修改或再分发权限**。正式选择许可证需由版权持有人确认。 / No open-source license has yet been declared; public visibility alone does not grant third-party redistribution rights. The copyright owner should approve a license before broad open-source reuse.
 
-## V2.2：开源设计改进 / Open-source-inspired Improvements
-
-**中文：** 已参考 LiteLLM、LangGraph、Aider、AutoGen、Claude Code Subagents 和 OpenHands 的公开设计，为可选执行器增加了阶段 checkpoint、依赖人工验收、显式重试上限与人工精简交接包。保持默认 dry-run 和逐阶段批准；不会因为 CLI 返回成功就自动把阶段当作验收通过。完整比较见 [开源设计对照](docs/guides/open-source-patterns.md)，使用方法见 [受控执行指南](docs/guides/execution.md)。
-
-**English:** Drawing on public patterns from LiteLLM, LangGraph, Aider, AutoGen, Claude Code and OpenHands, the optional runner now supports manifest-bound checkpoints, acceptance-gated dependencies, bounded explicitly approved retries and human-authored compact handoffs. Dry-run remains the default; a successful CLI exit is never automatic acceptance. See [research and tradeoffs](docs/guides/open-source-patterns.md) and the [supervised execution guide](docs/guides/execution.md).
-
-
-## Token 成本优化 / Token efficiency
-
-**中文：** 为了降低重复上下文和不必要的模型调用开销，新增阶段初始提示词 6,000 字符、人工审核交接 1,500 字符默认上限；Claude Code 默认最多 6 轮。使用 `context_files` 提示最多 8 个优先阅读的文件路径，而非复制完整文件。任务可显式设置 `minimize_switches: true`，在仍满足安全和任务约束时减少模型切换。**目前尚无真实计费对比数据，不能宣称固定比例节省**。详见 [Token 优化指南](docs/guides/token-efficiency.md)。
-
-**English:** Stage prompts default to 6,000 characters, reviewed handoffs to 1,500, and Claude Code to six agent turns. Up to eight `context_files` path hints avoid pasting large source files. Opt-in `minimize_switches: true` reduces possible handoffs only after existing hard gates pass. **No real billing savings have been measured.** See the [token-efficiency guide](docs/guides/token-efficiency.md).
+供应商模型与价格快照有独立核实日期；本次发行不会将其自动刷新为当前事实。 / Provider model and pricing snapshots retain their own review dates; publishing a new release does not refresh those facts.
