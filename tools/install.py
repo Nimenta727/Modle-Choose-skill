@@ -17,6 +17,7 @@ INSTRUCTION = (
     "section with primary and backup models per stage, explicit availability status, "
     "verification date and re-routing criteria. This is recommendation-only unless a "
     "separately authorized orchestrator performs the switch.\n"
+    "中文：制定开发计划前，请加载 model-router Skill；推荐不代表执行授权。\n"
     f"{MARK_END}\n"
 )
 

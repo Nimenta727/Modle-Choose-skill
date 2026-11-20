@@ -17,9 +17,9 @@ import subprocess
 import sys
 import tempfile
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_SUITE = Path(__file__).with_name("trigger_cases.json")
-INSTALLER = ROOT / "scripts/install.py"
+INSTALLER = ROOT / "tools/install.py"
 
 
 def command_for(agent: str, prompt: str) -> list[str]:
