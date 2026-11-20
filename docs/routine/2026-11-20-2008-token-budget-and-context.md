@@ -35,3 +35,11 @@
 1. Add safety/CLI regression tests and verify CI.
 2. Implement opt-in model continuity to reduce unnecessary vendor/model handoffs.
 3. Collect real usage and billing metrics on approved tasks.
+
+---
+
+### 发行归档提示 / Release archive notice (2026-11-20)
+
+中文：这是对应日期的历史记录，原始变更及当时的测试结论继续保留。当前使用方法、安全说明与候选发行信息请查看 [项目首页](../../README.md)、[文档导航](../README.md) 和 [发行指南](../guides/release.md)。模型、价格和客户端支持以各自的最新核实证据为准。
+
+English: This is a preserved historical entry. Original changes and observed checks remain unchanged. Refer to the [README](../../README.md), [documentation](../README.md) and [release guide](../guides/release.md) for the current supported paths and release status. Model data and live client support require separately dated evidence.
