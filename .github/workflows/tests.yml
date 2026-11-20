@@ -19,9 +19,11 @@ jobs:
       - name: Reproducible Skill ZIP and SHA-256
         run: |
           python tools/package_release.py --output-dir "$RUNNER_TEMP/release"
-          python tools/package_release.py --verify "$RUNNER_TEMP/release/model-router-skill-v2.3.0-rc.1.zip"
+          version="$(python -c 'import json; print(json.load(open("release/version.json", encoding="utf-8"))["version"])')"
+          asset="model-router-skill-v${version}.zip"
+          python tools/package_release.py --verify "$RUNNER_TEMP/release/$asset"
           cd "$RUNNER_TEMP/release"
-          sha256sum -c model-router-skill-v2.3.0-rc.1.zip.sha256
+          sha256sum -c "$asset.sha256"
       - name: Offline policy evaluation
         run: |
           python tools/evals/evaluate_routes.py \
