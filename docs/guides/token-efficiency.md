@@ -63,3 +63,10 @@ Use the commands above for **dry-run previews with no model calls**. Heuristic t
 **English:** Optionally add `"max_claude_cost_usd": 0.5` to a stage `token_budget` ($0.01–$500). The runner passes Claude Code's officially documented `--max-budget-usd` flag. It stops based on **client-estimated** API spend and may overshoot; it is **not a hard billing cap** and does not affect Codex. The runner records `reported_usage` only from numeric fields actually supplied in Claude CLI JSON; unavailable usage remains unknown.
 
 Source: [Claude Code CLI budget flag](https://code.claude.com/docs/en/cli-reference).
+
+
+## Codex 用量观测 / Codex usage telemetry
+
+中文：执行器现在通过官方 Codex exec --json 事件提取完成的 turn.completed 的输入、输出和缓存 Token 数，并仅把这些数字写到私有 result.json。异常或缺失字段标记未知，不保存原始事件或模型回复。由于尚未采集真实账号的同任务数据，不能给出任何节省百分比。
+
+English: Codex exec --json now provides completed-turn token and cache counts. Only numeric values go into private result.json; raw event streams are not persisted. Truncated, failed or missing events remain unknown. Without matched real runs, no savings percentage is claimed.

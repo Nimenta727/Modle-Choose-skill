@@ -161,5 +161,31 @@ class ContinuityTests(unittest.TestCase):
         self.assertIn("Model transitions", router.render_markdown(preferred))
 
 
+class CodexUsageTests(unittest.TestCase):
+    def test_exec_json_mode_enabled(self):
+        cmd = run.make_command(stage(agent="codex", provider="openai"), Path("/tmp/codex-final"), "codex")
+        self.assertIn("--json", cmd)
+
+    def test_usage_counts_and_private_data_not_saved(self):
+        stream = "\n".join([
+            json.dumps({"type": "item.completed", "output": "PRIVATE"}),
+            json.dumps({"type": "turn.completed", "usage": {
+                "input_tokens": 20, "cached_input_tokens": 15, "output_tokens": 5}}),
+            json.dumps({"type": "turn.completed", "usage": {
+                "input_tokens": 30, "cached_input_tokens": 20, "output_tokens": 7}}),
+        ])
+        usage = run.extract_codex_usage(stream)
+        self.assertEqual(usage["fields"]["input_tokens"], 50)
+        self.assertEqual(usage["fields"]["cached_input_tokens"], 35)
+        self.assertEqual(usage["fields"]["output_tokens"], 12)
+        self.assertNotIn("PRIVATE", str(usage))
+
+    def test_invalid_or_missing_events_are_unknown(self):
+        self.assertEqual(run.extract_codex_usage('{"type":"turn.failed"}'), {})
+        self.assertEqual(run.extract_codex_usage('{"type":"turn.completed","usage":{"input_tokens":2}}\nBAD'), {})
+        self.assertEqual(run.extract_codex_usage(json.dumps({"type": "turn.completed",
+            "usage": {"input_tokens": True}})), {})
+
+
 if __name__ == "__main__":
     unittest.main()

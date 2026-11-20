@@ -108,7 +108,7 @@ def make_command(row: dict, output_path: Path, cli_path: str | None = None) -> l
         if budget.get("max_claude_cost_usd") is not None:
             cmd += ["--max-budget-usd", str(budget["max_claude_cost_usd"])]
         return cmd
-    return [exe, "exec", "--model", row["cli_model"], "--sandbox",
+    return [exe, "exec", "--json", "--model", row["cli_model"], "--sandbox",
             "workspace-write" if writable else "read-only",
             "--ephemeral", "-c", 'approval_policy="never"',
             "--output-last-message", str(output_path), "-"]
@@ -158,6 +158,33 @@ def extract_claude_usage(raw: str) -> dict:
             "note": "CLI-reported estimate, not confirmed invoice or complete cross-agent cost"} if measured else {}
 
 
+def extract_codex_usage(raw: str) -> dict:
+    """Numeric-only completed-turn usage from Codex JSONL, not raw event logs."""
+    totals = {}
+    finished = 0
+    names = ("input_tokens", "output_tokens", "cached_input_tokens", "reasoning_output_tokens")
+    try:
+        for line in raw.splitlines():
+            if not line.strip():
+                continue
+            event = json.loads(line)
+            if not isinstance(event, dict) or event.get("type") != "turn.completed":
+                continue
+            event_usage = event.get("usage")
+            if not isinstance(event_usage, dict):
+                continue
+            valid = {key: val for key in names
+                     if type(val := event_usage.get(key)) is int and 0 <= val <= 10**15}
+            if valid:
+                finished += 1
+                for key, val in valid.items():
+                    totals[key] = totals.get(key, 0) + val
+    except (ValueError, TypeError):
+        return {}
+    return {"source": "codex_exec_completed_turns", "fields": totals,
+            "note": "Completed turns only; missing or failed turns may have unmeasured usage"} if finished else {}
+
+
 def private_write(path: Path, content: str) -> None:
     flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
     fd = os.open(path, flags, 0o600)
@@ -193,6 +220,10 @@ def invoke_stage(row: dict, workspace: Path, output_root: Path, timeout: int,
         result = subprocess.run(command, cwd=workspace, input=prompt, capture_output=True, text=True,
                                 encoding="utf-8", errors="replace", env=child_env, timeout=timeout)
         record["exit_code"] = result.returncode
+        if row["agent"] == "codex":
+            numeric_usage = extract_codex_usage(result.stdout)
+            if numeric_usage:
+                record["reported_usage"] = numeric_usage
         if result.returncode == 0:
             if row["agent"] == "codex":
                 if not output_path.is_file():
