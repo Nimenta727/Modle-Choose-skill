@@ -11,6 +11,11 @@ from pathlib import Path
 import re
 import sys
 
+try:
+    from . import token_budget
+except ImportError:
+    import token_budget
+
 
 def stage_id(name: str, index: int) -> str:
     stem = re.sub(r"[^a-z0-9-]+", "-", name.lower().replace("_", "-" )).strip("-")[:40]
@@ -52,6 +57,7 @@ def build_manifest(task: dict, routing: dict) -> dict:
         prompt = user_prompt or f"Work on phase: {stage['name']}\nDeliverable: {deliverable}\n"
         if len(prompt) > 30000:
             raise ValueError("stage prompt is too long")
+        context_files = token_budget.validate_context_files(stage.get("context_files", []))
         result.append({
             "id": stage_id(stage["name"], n),
             "name": stage["name"],
@@ -64,6 +70,10 @@ def build_manifest(task: dict, routing: dict) -> dict:
             "mode": "read-only",
             "prompt": prompt,
             "deliverable": deliverable,
+            "context_files": context_files,
+            "token_budget": {"max_prompt_chars": token_budget.DEFAULT_PROMPT_CHARS,
+                             "max_handoff_chars": token_budget.DEFAULT_HANDOFF_CHARS,
+                             "max_claude_turns": token_budget.DEFAULT_CLAUDE_TURNS},
             # Sequential by default. Review dependencies before approving stages.
             "depends_on": [result[-1]["id"]] if result else [],
         })
