@@ -10,7 +10,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from orchestrator import prepare, run
+from tools.orchestrator import prepare, run
 
 
 def fixture(mode="read-only", agent="claude", approved=False, cli_model=""):

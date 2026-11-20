@@ -21,9 +21,9 @@ def module(name, path):
 
 
 router = module("router_v14", SKILL / "scripts/route.py")
-compare = module("compare_v14", ROOT / "evals/compare_trials.py")
+compare = module("compare_v14", ROOT / "tools/evals/compare_trials.py")
 handoff = module("handoff_v14", SKILL / "scripts/handoff.py")
-score = module("score_v14", ROOT / "evals/score_trials.py")
+score = module("score_v14", ROOT / "tools/evals/score_trials.py")
 REGISTRY = router.load_json(SKILL / "references/model-registry.json")
 
 

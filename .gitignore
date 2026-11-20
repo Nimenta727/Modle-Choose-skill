@@ -6,8 +6,8 @@ __pycache__/
 *.key
 .venv/
 local-eval-reports/
-evals/outputs/
-evals/traces/
+tools/evals/outputs/
+tools/evals/traces/
 
 # Local execution manifests and private run records
 .model-router/

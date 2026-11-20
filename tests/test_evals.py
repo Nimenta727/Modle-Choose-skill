@@ -17,11 +17,11 @@ def module(name: str, path: Path):
     return mod
 
 
-policy = module("policy_eval", ROOT / "evals/evaluate_routes.py")
-live = module("live_eval", ROOT / "evals/live_triggers.py")
-trials = module("trial_eval", ROOT / "evals/score_trials.py")
+policy = module("policy_eval", ROOT / "tools/evals/evaluate_routes.py")
+live = module("live_eval", ROOT / "tools/evals/live_triggers.py")
+trials = module("trial_eval", ROOT / "tools/evals/score_trials.py")
 registry = json.loads((ROOT / "skills/model-router/references/model-registry.json").read_text(encoding="utf-8"))
-suite = json.loads((ROOT / "evals/routing_cases.json").read_text(encoding="utf-8"))
+suite = json.loads((ROOT / "tools/evals/routing_cases.json").read_text(encoding="utf-8"))
 
 
 class EvaluationTests(unittest.TestCase):
@@ -51,7 +51,7 @@ class EvaluationTests(unittest.TestCase):
     def test_cli_output_reports_json_and_markdown(self):
         with tempfile.TemporaryDirectory() as tmp:
             dest = Path(tmp)
-            result = subprocess.run([sys.executable, str(ROOT / "evals/evaluate_routes.py"),
+            result = subprocess.run([sys.executable, str(ROOT / "tools/evals/evaluate_routes.py"),
                                      "--json-out", str(dest / "report.json"),
                                      "--md-out", str(dest / "report.md")],
                                     capture_output=True, text=True, check=False)
@@ -113,7 +113,7 @@ class EvaluationTests(unittest.TestCase):
         self.assertNotIn("--dangerously-skip-permissions", claude)
 
     def test_dry_run_does_not_call_client(self):
-        result = subprocess.run([sys.executable, str(ROOT / "evals/live_triggers.py"),
+        result = subprocess.run([sys.executable, str(ROOT / "tools/evals/live_triggers.py"),
                                  "--agent", "codex", "--max-runs", "2"],
                                 capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)

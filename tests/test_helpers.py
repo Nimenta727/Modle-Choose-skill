@@ -17,7 +17,7 @@ def module(name, path):
 
 updater = module("model_updater", SKILL / "scripts/update_models.py")
 availability = module("model_availability", SKILL / "scripts/check_availability.py")
-installer = module("model_installer", ROOT / "scripts/install.py")
+installer = module("model_installer", ROOT / "tools/install.py")
 registry = __import__("json").loads((SKILL / "references/model-registry.json").read_text())
 
 

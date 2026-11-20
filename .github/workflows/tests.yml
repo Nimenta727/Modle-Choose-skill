@@ -11,22 +11,22 @@ jobs:
         with:
           python-version: '3.12'
       - name: Compile
-        run: python -m compileall -q skills/model-router/scripts scripts evals orchestrator
+        run: python -m compileall -q skills/model-router/scripts tools
       - name: Unit tests
         run: python -m unittest discover -s tests -v
       - name: Offline policy evaluation
         run: |
-          python evals/evaluate_routes.py \
+          python tools/evals/evaluate_routes.py \
             --json-out "${{ runner.temp }}/routing-eval.json" \
             --md-out "${{ runner.temp }}/routing-eval.md"
       - name: CLI dry-run smoke (no model calls)
         run: |
-          python evals/live_triggers.py --agent claude --max-runs 5
-          python evals/live_triggers.py --agent codex --max-runs 5
+          python tools/evals/live_triggers.py --agent claude --max-runs 5
+          python tools/evals/live_triggers.py --agent codex --max-runs 5
       - name: V1.4 evidence and handoff smoke (no model calls)
         run: |
-          python evals/score_trials.py --trials evals/trials.json --output "${{ runner.temp }}/trial-score.json"
-          python evals/compare_trials.py --trials evals/trials.json --json-out "${{ runner.temp }}/paired-proposal.json"
+          python tools/evals/score_trials.py --trials evals/trials.json --output "${{ runner.temp }}/trial-score.json"
+          python tools/evals/compare_trials.py --trials evals/trials.json --json-out "${{ runner.temp }}/paired-proposal.json"
           python skills/model-router/scripts/route.py \
             --task-file skills/model-router/examples/budget-plan.json \
             --format json > "${{ runner.temp }}/budget-reference.json"
@@ -36,8 +36,8 @@ jobs:
       - name: V2.0 execution adapter dry-run (no provider calls)
         run: |
           python skills/model-router/scripts/route.py --task-file skills/model-router/examples/project-plan.json --format json > "${{ runner.temp }}/route-v2.json"
-          python orchestrator/prepare.py --task-file skills/model-router/examples/project-plan.json --route-file "${{ runner.temp }}/route-v2.json" --output "${{ runner.temp }}/unapproved-v2.json"
-          python orchestrator/run.py --manifest "${{ runner.temp }}/unapproved-v2.json" --workspace . --all
+          python tools/orchestrator/prepare.py --task-file skills/model-router/examples/project-plan.json --route-file "${{ runner.temp }}/route-v2.json" --output "${{ runner.temp }}/unapproved-v2.json"
+          python tools/orchestrator/run.py --manifest "${{ runner.temp }}/unapproved-v2.json" --workspace . --all
       - name: Upload offline eval reports
         if: always()
         uses: actions/upload-artifact@v4

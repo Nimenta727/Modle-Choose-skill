@@ -47,7 +47,7 @@ The scheduled weekly audit uploads a review report; it does **not** create API c
 
 ## 6. Real-data calibration (explicit opt-in, V1.4)
 
-`evals/compare_trials.py` produces a **proposal only**, requiring same-task fixture, rubric, execution harness fingerprint and surface, repeated outcomes and independent human assessment. A raw proposal is never accepted by the router.
+`tools/evals/compare_trials.py` produces a **proposal only**, requiring same-task fixture, rubric, execution harness fingerprint and surface, repeated outcomes and independent human assessment. A raw proposal is never accepted by the router.
 
 A user may explicitly provide a locally reviewed `--calibration-file` with `schema_version:1`, `status:user_reviewed`, timezone-aware `reviewed_at` and `adjustments` entries `{model_id, task_type, score_delta, evidence}`. Maximum absolute delta: 8 score points; expires after 90 days. Only affects eligible-candidate ranking, **not hard task/surface/access/price filters or minimum capability gates**. This is not independently authenticated evidence; the user must verify provenance. No automatic edits to `model-registry.json`.
 
