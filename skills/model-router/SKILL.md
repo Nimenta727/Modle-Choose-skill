@@ -50,7 +50,7 @@ For a repository checkout use `skills/model-router/scripts/route.py`, etc. Input
 
 ## Validation & evidence policy
 
-When reporting whether this Skill works, distinguish policy unit/eval results from real Claude Code / Codex activation. The repository's `evals/evaluate_routes.py` validates deterministic routing contracts; `evals/live_triggers.py` is an optional **explicitly authorized** account-backed smoke runner and defaults to no model calls. Its Plan Mode table checks are not proof of internal Skill activation. Read `docs/guides/evaluation.md` in the repository for the rubric; do not invent live invocation or empirical model-quality metrics. Never auto-tune `model-registry.json` from synthetic route cases.
+When reporting whether this Skill works, distinguish policy unit/eval results from real Claude Code / Codex activation. The repository's `tools/evals/evaluate_routes.py` validates deterministic routing contracts; `tools/evals/live_triggers.py` is an optional **explicitly authorized** account-backed smoke runner and defaults to no model calls. Its Plan Mode table checks are not proof of internal Skill activation. Read `docs/guides/evaluation.md` in the repository for the rubric; do not invent live invocation or empirical model-quality metrics. Never auto-tune `model-registry.json` from synthetic route cases.
 
 ## V1.4 commands (optional; no automatic calls)
 
