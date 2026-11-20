@@ -1,5 +1,7 @@
 # 2026-11-19 23:43 (+08:00) — V2.0 受控跨模型 CLI 执行器 MVP
 
+## 中文原始记录 / Chinese original
+
 ## 本次做了什么
 
 - 增加 `orchestrator/prepare.py`，把现有 `route.py --format json` 的阶段推荐转换为**待审核、未授权**的执行清单。源于 `external-conditional` 的跨平台建议也必须人工确认后才能运行。
@@ -31,3 +33,9 @@
 2. 为本地执行添加更严格的实际任务验收钩子、受限代码工作树、明确的成本/时间限额和中断恢复机制；不要绕过供应商原生沙箱。
 3. 基于真实实验结果修正阶段路由与 CLI 模型名映射；继续保留需要审批的跨供应商交接机制。
 4. 如用户希望无人值守全自动执行，再单独设计权限策略、费用封顶、审计与更强的运行环境隔离，经过验证后再推出。
+
+## English summary (historical record)
+
+Added a supervised local Claude Code/Codex execution bridge. New manifests are unapproved, preview-only by default; real stages, writes, and cross-provider handoffs require explicit consent. Offline adapter tests were recorded; authenticated end-to-end testing remained pending.
+
+**Context:** This is a historical log, not the current installation guide. Paths and commands may have been superseded by tools/ and docs/guides/. The original Chinese text preserves the checks reported at the time.

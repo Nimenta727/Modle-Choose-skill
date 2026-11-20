@@ -25,8 +25,8 @@ jobs:
           python tools/evals/live_triggers.py --agent codex --max-runs 5
       - name: V1.4 evidence and handoff smoke (no model calls)
         run: |
-          python tools/evals/score_trials.py --trials evals/trials.json --output "${{ runner.temp }}/trial-score.json"
-          python tools/evals/compare_trials.py --trials evals/trials.json --json-out "${{ runner.temp }}/paired-proposal.json"
+          python tools/evals/score_trials.py --trials tools/evals/trials.json --output "${{ runner.temp }}/trial-score.json"
+          python tools/evals/compare_trials.py --trials tools/evals/trials.json --json-out "${{ runner.temp }}/paired-proposal.json"
           python skills/model-router/scripts/route.py \
             --task-file skills/model-router/examples/budget-plan.json \
             --format json > "${{ runner.temp }}/budget-reference.json"

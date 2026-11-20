@@ -1,5 +1,7 @@
 # 2026-11-19 22:39 (+08:00) — Model Router V1.3 评测与客户端测试工具
 
+## 中文原始记录 / Chinese original
+
 ## 做了什么
 
 - 增加 24 个带固定时钟的离线路由契约案例，覆盖 API/客户端 Surface、授权证据、平台回退、预算、风险/复杂度、工具能力、上下文限制和多阶段计划。
@@ -22,3 +24,9 @@
 2. 选择同一套公开可复现的任务，重复测试不同可用模型，收集通过率、成本、用时、上下文及返工次数。
 3. 对照独立验收标准，在样本量充分后校准任务适配权重，严禁用合成边界测试分数冒充模型能力。
 4. 继续提高跨平台别名映射、输出解析鲁棒性和项目级预算估算。
+
+## English summary (historical record)
+
+Added offline policy scenarios, an opt-in Claude Code/Codex Plan Mode activation harness, and real-task score aggregation conventions. Offline passing tests do not establish authenticated CLI activation or model quality. Next: measured outcomes and cost calibration.
+
+**Context:** This is a historical log, not the current installation guide. Paths and commands may have been superseded by tools/ and docs/guides/. The original Chinese text preserves the checks reported at the time.

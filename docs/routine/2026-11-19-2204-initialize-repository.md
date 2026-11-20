@@ -1,5 +1,7 @@
 # 2026-11-19 22:04 (+08:00) — 初始化空仓库
 
+## 中文原始记录 / Chinese original
+
 ## 本次修改
 
 - 确认 GitHub 仓库 `Nimenta727/Modle-Choose-skill` 初始为空。
@@ -15,3 +17,9 @@
 1. 提交 Model Router V1 技能、模型快照、路由脚本、安装器和测试。
 2. 为 Model Router 添加 Claude Code / Codex Plan Mode 的项目级入口。
 3. 执行测试并记录通过情况及后续 V1.1 评测规划。
+
+## English summary (historical record)
+
+Initialized an empty repository with a main branch and a dated routine record. Verified repository write access. Next objective: deliver the initial routing Skill and tests.
+
+**Context:** This is a historical log, not the current installation guide. Paths and commands may have been superseded by tools/ and docs/guides/. The original Chinese text preserves the checks reported at the time.

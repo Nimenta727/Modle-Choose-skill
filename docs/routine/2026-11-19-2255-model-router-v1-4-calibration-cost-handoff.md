@@ -1,5 +1,7 @@
 # 2026-11-19 22:55 (+08:00) — V1.4 真实任务证据校准、成本参考及阶段交接
 
+## 中文原始记录 / Chinese original
+
 ## 本次完成了什么
 
 1. `skills/model-router/scripts/route.py` 新增项目分阶段的输入/输出 Token **预计总量**、未缓存 API 标价参考与项目小计；缺失估算时显示 unknown，部分覆盖时不伪报总预算，价格起价模型标注 lower-bound。
@@ -42,3 +44,9 @@
 2. 建立公开、冻结、可复现的同任务代码修复/重构/评审基准，至少六个独立任务并对每个模型重复运行，人工验证 SHA-256 工件/测试环境、权限与计费来源。
 3. 由用户独立审核比较建议，发布单独的局部校准文件和评测说明，再观察对推荐的一致性和失败率影响。
 4. 如有真实预算数据，研究 API 费用范围、缓存与重试修正以及跨阶段总预算优化；保持价格不确定性的明确标注。
+
+## English summary (historical record)
+
+Added reference API cost estimates, paired-task comparison proposals, bounded human-reviewed ranking calibration and unfilled handoff templates. Unapproved evidence cannot change hard constraints. Next: authenticated repeated measurements and supervised integration.
+
+**Context:** This is a historical log, not the current installation guide. Paths and commands may have been superseded by tools/ and docs/guides/. The original Chinese text preserves the checks reported at the time.

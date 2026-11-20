@@ -1,5 +1,7 @@
 # 2026-11-19 22:29 (+08:00) — Model Router V1.1 / V1.2 可靠性与模型目录审计
 
+## 中文原始记录 / Chinese original
+
 ## 本次修改
 
 ### V1.1 — 路由可靠性
@@ -31,3 +33,9 @@
 2. 构建至少 30 个真实任务的基准集，用功能测试、返工次数、成本和延迟修正启发式模型评分。
 3. 为 Claude Code/Codex 的模型别名建立显式、可验证的映射配置，不擅自把 API ID 当作 UI 模型 ID。
 4. 逐步增加 API 账单/缓存/上下文的成本预测；仅在用户授权并配置独立 Orchestrator 后考虑跨模型自动执行。
+
+## English summary (historical record)
+
+Hardened environment-specific routing, separated API inventory visibility from successful model calls, and improved hard-budget and default-complexity handling. Broadened read-only model discovery and added tests. Next: client activation and empirical evaluation.
+
+**Context:** This is a historical log, not the current installation guide. Paths and commands may have been superseded by tools/ and docs/guides/. The original Chinese text preserves the checks reported at the time.
