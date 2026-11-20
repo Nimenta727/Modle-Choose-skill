@@ -198,3 +198,10 @@ Generate a compact handoff using a **separately human-authored** safe summary vi
 **中文：** `tools/orchestrator/prepare.py` 为每阶段生成 `token_budget`，包含 `max_prompt_chars: 6000`、`max_handoff_chars: 1500`、`max_claude_turns: 6`。在 dry-run 和执行前检查；超限会拒绝，不截断输入。`context_files` 只提供路径而不复制代码。字符限制并不是总账单 Token 上限，也无法限制 Codex 的所有内部工具轮次。详情见 [Token 优化指南](token-efficiency.md)。
 
 **English:** New manifests set `max_prompt_chars: 6000`, `max_handoff_chars: 1500` and `max_claude_turns: 6`. Dry-run and live preflight reject oversized inputs without truncating them. `context_files` passes paths rather than source contents. These character caps do not limit total provider tokens or Codex internal turns. See [Token efficiency](token-efficiency.md).
+
+
+## 可选费用保护 / Optional CLI budget guard
+
+**中文：** 对支持 `--max-budget-usd` 的 Claude Code 版本，在执行清单的 `token_budget` 内明确设置 `"max_claude_cost_usd": 0.5`。该上限基于 CLI 客户端估算，可能超额，不是实际账单保证；不适用于 Codex。若 Claude CLI 返回数值型用量字段，会在私有 `result.json` 中记录，缺失则不伪造。
+
+**English:** On a supporting Claude Code release, set `"max_claude_cost_usd": 0.5` in an approved stage's `token_budget`. This passes Claude's client-estimate `--max-budget-usd` stop condition, which may overshoot and is not a guaranteed billing ceiling. It does not apply to Codex. Numeric CLI-reported usage is recorded privately when available; unknown remains unknown.

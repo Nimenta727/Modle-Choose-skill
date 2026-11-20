@@ -102,6 +102,36 @@ class TokenBudgetTests(unittest.TestCase):
             self.assertEqual(rc, 2)
 
 
+class ClaudeCostTests(unittest.TestCase):
+    def test_client_dollar_cap_optional_and_validated(self):
+        x = stage(token_budget={"max_claude_cost_usd": 0.5})
+        cmd = run.make_command(x, Path("/tmp/out"), "claude")
+        self.assertIn("--max-budget-usd", cmd)
+        self.assertEqual(cmd[cmd.index("--max-budget-usd") + 1], "0.5")
+        self.assertNotIn("--max-budget-usd", run.make_command(stage(), Path("/tmp/out"), "claude"))
+
+    def test_invalid_cost_caps_rejected(self):
+        for bad in (0, -1, True, "1", float("nan"), float("inf"), 501):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                token_budget.policy_for(stage(token_budget={"max_claude_cost_usd": bad}))
+
+    def test_codex_not_given_claude_dollar_cap(self):
+        x = stage(agent="codex", provider="openai", token_budget={"max_claude_cost_usd": 1.0})
+        self.assertNotIn("--max-budget-usd", run.make_command(x, Path("/tmp/out"), "codex"))
+
+    def test_cli_usage_only_from_real_fields(self):
+        usage = run.extract_claude_usage(json.dumps({
+            "usage": {"input_tokens": 350, "output_tokens": 30, "irrelevant": "secret"},
+            "total_cost_usd": 0.015, "debug": {"token": "private"}
+        }))
+        self.assertEqual(usage["fields"]["input_tokens"], 350)
+        self.assertEqual(usage["fields"]["claude_cli_estimated_cost_usd"], 0.015)
+        self.assertNotIn("debug", usage)
+        self.assertEqual(run.extract_claude_usage("{}"), {})
+        self.assertEqual(run.extract_claude_usage("not-json"), {})
+        self.assertEqual(run.extract_claude_usage('{"total_cost_usd": -1}'), {})
+
+
 class ContinuityTests(unittest.TestCase):
     def test_invalid_parameters_fail_closed(self):
         task = {"stages": [{"name": "A", "type": "analysis"}], "minimize_switches": True}

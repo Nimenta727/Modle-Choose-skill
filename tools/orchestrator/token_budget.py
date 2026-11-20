@@ -51,13 +51,18 @@ def policy_for(row: dict) -> dict:
         "max_claude_turns": (DEFAULT_CLAUDE_TURNS, 1, MAX_CLAUDE_TURNS),
     }
     result = {}
-    if set(policy) - set(settings):
-        raise ValueError(f"unsupported token_budget keys: {sorted(set(policy) - set(settings))}")
+    if set(policy) - set(settings) - {"max_claude_cost_usd"}:
+        raise ValueError(f"unsupported token_budget keys: {sorted(set(policy) - set(settings) - {'max_claude_cost_usd'})}")
     for key, (default, minimum, maximum) in settings.items():
         number = policy.get(key, default)
         if type(number) is not int or not minimum <= number <= maximum:
             raise ValueError(f"{key} must be an integer between {minimum} and {maximum}")
         result[key] = number
+    spending = policy.get("max_claude_cost_usd")
+    if spending is not None:
+        if type(spending) not in (int, float) or not math.isfinite(spending) or not 0.01 <= spending <= 500:
+            raise ValueError("max_claude_cost_usd must be a finite number between $0.01 and $500")
+        result["max_claude_cost_usd"] = spending
     validate_context_files(row.get("context_files", []))
     return result
 
@@ -84,5 +89,6 @@ def budget_report(row: dict, prompt: str, handoff: str | None = None) -> dict:
         "estimated_prompt_tokens": estimated_tokens(prompt),
         "estimate_method": "unicode_chars_plus_ascii_divided_by_3; not tokenizer or billable usage",
         "max_claude_turns": policy["max_claude_turns"],
+        "max_claude_cost_usd": policy.get("max_claude_cost_usd"),
         "context_files_count": len(validate_context_files(row.get("context_files", []))),
     }

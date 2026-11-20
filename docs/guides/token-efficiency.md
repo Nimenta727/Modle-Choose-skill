@@ -54,3 +54,12 @@ Use the commands above for **dry-run previews with no model calls**. Heuristic t
 - [Claude Code usage and limits](https://support.claude.com/en/articles/14552983-models-usage-and-limits-in-claude-code)
 - [OpenAI API pricing and cached input](https://platform.openai.com/pricing/)
 - [LiteLLM session-affinity routing](https://docs.litellm.ai/docs/routing)
+
+
+### 可选 Claude Code 单阶段费用保护 / Optional Claude Code cost guard
+
+**中文：** 如果本机安装的 Claude Code 版本支持官方 `--max-budget-usd`，可在单阶段 `token_budget` 中手动加入 `"max_claude_cost_usd": 0.5`（范围 $0.01–$500）。调度器会将该值作为 CLI 参数传入。**这只是客户端估算费用的停止条件**：可能超过上限，不是供应商账单硬性封顶；对子 Agent 的涵盖方式与 Claude Code 版本有关，Codex 不受此项限制。未设置时不添加该参数。调度器仅在 Claude CLI JSON 确实返回数值字段时，才在私有结果记录 `reported_usage`，否则保持未知，不会估造实际 Token 或成本。
+
+**English:** Optionally add `"max_claude_cost_usd": 0.5` to a stage `token_budget` ($0.01–$500). The runner passes Claude Code's officially documented `--max-budget-usd` flag. It stops based on **client-estimated** API spend and may overshoot; it is **not a hard billing cap** and does not affect Codex. The runner records `reported_usage` only from numeric fields actually supplied in Claude CLI JSON; unavailable usage remains unknown.
+
+Source: [Claude Code CLI budget flag](https://code.claude.com/docs/en/cli-reference).

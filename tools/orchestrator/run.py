@@ -98,12 +98,16 @@ def make_command(row: dict, output_path: Path, cli_path: str | None = None) -> l
     agent, writable = row["agent"], row.get("mode", "read-only") == "write"
     exe = cli_path or agent
     if agent == "claude":
-        return [exe, "-p", "Complete the stage request supplied on standard input.",
+        budget = token_budget.policy_for(row)
+        cmd = [exe, "-p", "Complete the stage request supplied on standard input.",
                 "--model", row["cli_model"], "--output-format", "json",
                 "--no-session-persistence", "--max-turns", str(token_budget.policy_for(row)["max_claude_turns"]),
                 "--permission-mode", "acceptEdits" if writable else "plan",
                 "--permission-prompts", "none", "--disallowedTools", "mcp__*",
                 "--tools", "Read,Glob,Grep,Edit,Write" if writable else "Read,Glob,Grep"]
+        if budget.get("max_claude_cost_usd") is not None:
+            cmd += ["--max-budget-usd", str(budget["max_claude_cost_usd"])]
+        return cmd
     return [exe, "exec", "--model", row["cli_model"], "--sandbox",
             "workspace-write" if writable else "read-only",
             "--ephemeral", "-c", 'approval_policy="never"',
@@ -127,6 +131,31 @@ def extract_claude_result(raw: str) -> str:
         pass
     # Do not persist complete raw JSON traces or tool messages if parsing fails.
     raise ValueError("Claude result JSON missing textual 'result'; response not persisted")
+
+
+def extract_claude_usage(raw: str) -> dict:
+    """Retain numeric usage fields emitted by Claude, never invent billing data."""
+    try:
+        result = json.loads(raw)
+    except (ValueError, TypeError):
+        return {}
+    if not isinstance(result, dict):
+        return {}
+    usage = result.get("usage")
+    allowed = ("input_tokens", "output_tokens", "cache_read_input_tokens",
+               "cache_creation_input_tokens")
+    from math import isfinite
+    measured = {}
+    if isinstance(usage, dict):
+        for key in allowed:
+            value = usage.get(key)
+            if type(value) is int and value >= 0:
+                measured[key] = value
+    cost = result.get("total_cost_usd")
+    if type(cost) in (int, float) and isfinite(cost) and cost >= 0:
+        measured["claude_cli_estimated_cost_usd"] = cost
+    return {"source": "claude_cli_json", "fields": measured,
+            "note": "CLI-reported estimate, not confirmed invoice or complete cross-agent cost"} if measured else {}
 
 
 def private_write(path: Path, content: str) -> None:
@@ -173,6 +202,9 @@ def invoke_stage(row: dict, workspace: Path, output_root: Path, timeout: int,
                     raise ValueError("Codex final message is empty")
             else:
                 final = extract_claude_result(result.stdout)
+                usage = extract_claude_usage(result.stdout)
+                if usage:
+                    record["reported_usage"] = usage
             record["state"] = "cli_completed_unreviewed"
             record["response_file"] = str(run_dir / "response.md")
             private_write(run_dir / "response.md", final)
@@ -256,6 +288,8 @@ def main(argv: list[str] | None = None) -> int:
             print(f"STAGE {row['id']}: {row['agent']} / {row['model_id']} / CLI {row.get('cli_model') or 'UNSET'} / {row.get('mode', 'read-only')} / approved={row['approved']}")
             report = reports[row["id"]]
             print(f"  PROMPT BUDGET: {report['prompt_chars']}/{report['prompt_char_cap']} chars; ~{report['estimated_prompt_tokens']} tokens (heuristic); max Claude turns={report['max_claude_turns']}")
+            if report.get("max_claude_cost_usd") is not None:
+                print(f"  CLAUDE CLIENT BUDGET: ${report['max_claude_cost_usd']} (estimate, may overshoot; Codex unaffected)")
             if not args.execute:
                 continue
             if args.all:
