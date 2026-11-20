@@ -42,6 +42,11 @@ jobs:
         run: |
           python tools/orchestrator/checkpoints.py --manifest "${{ runner.temp }}/unapproved-v2.json" --state "${{ runner.temp }}/checkpoint-v22.json" --init
           python tools/orchestrator/checkpoints.py --manifest "${{ runner.temp }}/unapproved-v2.json" --state "${{ runner.temp }}/checkpoint-v22.json" --status > "${{ runner.temp }}/checkpoint-status.json"
+      - name: Token-efficient plan and budget dry-run (no provider calls)
+        run: |
+          python skills/model-router/scripts/route.py --task-file skills/model-router/examples/token-efficient-plan.json --format json > "${{ runner.temp }}/token-route.json"
+          python tools/orchestrator/prepare.py --task-file skills/model-router/examples/token-efficient-plan.json --route-file "${{ runner.temp }}/token-route.json" --output "${{ runner.temp }}/token-execution.json"
+          python tools/orchestrator/run.py --manifest "${{ runner.temp }}/token-execution.json" --workspace . --all
       - name: Upload offline eval reports
         if: always()
         uses: actions/upload-artifact@v4

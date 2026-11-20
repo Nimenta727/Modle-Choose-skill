@@ -116,3 +116,10 @@ The model registry has its own verification date; editing these docs does not re
 **中文：** 已参考 LiteLLM、LangGraph、Aider、AutoGen、Claude Code Subagents 和 OpenHands 的公开设计，为可选执行器增加了阶段 checkpoint、依赖人工验收、显式重试上限与人工精简交接包。保持默认 dry-run 和逐阶段批准；不会因为 CLI 返回成功就自动把阶段当作验收通过。完整比较见 [开源设计对照](docs/guides/open-source-patterns.md)，使用方法见 [受控执行指南](docs/guides/execution.md)。
 
 **English:** Drawing on public patterns from LiteLLM, LangGraph, Aider, AutoGen, Claude Code and OpenHands, the optional runner now supports manifest-bound checkpoints, acceptance-gated dependencies, bounded explicitly approved retries and human-authored compact handoffs. Dry-run remains the default; a successful CLI exit is never automatic acceptance. See [research and tradeoffs](docs/guides/open-source-patterns.md) and the [supervised execution guide](docs/guides/execution.md).
+
+
+## Token 成本优化 / Token efficiency
+
+**中文：** 为了降低重复上下文和不必要的模型调用开销，新增阶段初始提示词 6,000 字符、人工审核交接 1,500 字符默认上限；Claude Code 默认最多 6 轮。使用 `context_files` 提示最多 8 个优先阅读的文件路径，而非复制完整文件。任务可显式设置 `minimize_switches: true`，在仍满足安全和任务约束时减少模型切换。**目前尚无真实计费对比数据，不能宣称固定比例节省**。详见 [Token 优化指南](docs/guides/token-efficiency.md)。
+
+**English:** Stage prompts default to 6,000 characters, reviewed handoffs to 1,500, and Claude Code to six agent turns. Up to eight `context_files` path hints avoid pasting large source files. Opt-in `minimize_switches: true` reduces possible handoffs only after existing hard gates pass. **No real billing savings have been measured.** See the [token-efficiency guide](docs/guides/token-efficiency.md).

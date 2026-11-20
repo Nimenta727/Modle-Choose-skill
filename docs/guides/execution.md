@@ -191,3 +191,10 @@ python3 tools/orchestrator/run.py --manifest local-execution.json --workspace /p
 CLI completion is *unreviewed*. Inspect output and independently validate acceptance before using --accept-stage, --confirm-stage and a human --evidence note. Reject incomplete output with --reject-stage and --reason. Only --retry-failed permits another attempted run, limited to two total attempts. An interrupted running stage requires manual side-effect review before a new plan; changed manifests invalidate old checkpoints.
 
 Generate a compact handoff using a **separately human-authored** safe summary via handoff_packet.py, as in the Chinese example. Packet creation does not send it to another provider. Cross-provider transfer still requires --handoff-file and --allow-handoff-share. State hashes are not authenticated proof of review.
+
+
+## Token 预算与阶段控制 / Stage token budgets
+
+**中文：** `tools/orchestrator/prepare.py` 为每阶段生成 `token_budget`，包含 `max_prompt_chars: 6000`、`max_handoff_chars: 1500`、`max_claude_turns: 6`。在 dry-run 和执行前检查；超限会拒绝，不截断输入。`context_files` 只提供路径而不复制代码。字符限制并不是总账单 Token 上限，也无法限制 Codex 的所有内部工具轮次。详情见 [Token 优化指南](token-efficiency.md)。
+
+**English:** New manifests set `max_prompt_chars: 6000`, `max_handoff_chars: 1500` and `max_claude_turns: 6`. Dry-run and live preflight reject oversized inputs without truncating them. `context_files` passes paths rather than source contents. These character caps do not limit total provider tokens or Codex internal turns. See [Token efficiency](token-efficiency.md).

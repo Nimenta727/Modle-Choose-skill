@@ -36,3 +36,10 @@ Former docs/v1.4.md, docs/v2.0-execution.md and docs/evaluation.md have been con
 ## 新增专题 / New research guide
 
 - [开源方案对照与设计取舍 / Open-source patterns and tradeoffs](guides/open-source-patterns.md) — LiteLLM、LangGraph、Aider、AutoGen、Claude Code、OpenHands：哪些设计已采纳、哪些还不应引入。 / What was adopted and deliberately left out.
+
+
+## Token 优化指南 / Token efficiency guide
+
+**中文：** [Token 成本优化](guides/token-efficiency.md) 介绍按需读取、字符预算、轮次控制和连续性路由。
+
+**English:** Read [Token efficiency](guides/token-efficiency.md) for path-only context hints, budgets, turn limits and opt-in model continuity.

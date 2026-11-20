@@ -77,3 +77,10 @@ Host utilities moved from scripts/install.py, evals/ and orchestrator/ to tools/
 **English:** An optional private checkpoint tracks pending → running → cli_completed_unreviewed → accepted/failed. prepare.py creates sequential dependencies by default; only explicit human acceptance unlocks downstream stages. Interrupted stages stay running pending review, preventing blind replay of side effects. Handoffs use human-authored summaries instead of raw transcripts.
 
 [详细开源方案对照 / Research and design decisions](guides/open-source-patterns.md)
+
+
+## Token 预算层 / Token-efficiency layer
+
+**中文：** `tools/orchestrator/token_budget.py` 检查初始提示词与交接文本的字符预算并显示粗略 Token 估计。`context_files` 仅为阅读路径提示；并不禁止 Claude Code/Codex 在权限范围内进一步读取文件。可选的连续性路由旨在减少潜在交接成本，未提供真实计费节省保证。
+
+**English:** `tools/orchestrator/token_budget.py` enforces initial prompt/handoff character budgets and labels a heuristic token estimate. `context_files` is a path hint, not a security boundary. Optional model affinity may reduce handoffs but has no measured cost guarantee.

@@ -77,3 +77,10 @@ The root repository has `tools/evals/compare_trials.py`, which produces `proposa
 **中文：** 可选的本地 tools/orchestrator/checkpoints.py 提供有界失败重试、阶段状态和人工审核依赖，handoff_packet.py 只为已验收阶段生成精简交接包。**Plan Mode 读取本 Skill 不代表可以调用执行器**，必须等待明确用户授权。
 
 **English:** Optional checkpoint and compact-handoff utilities live in the host repository's tools/orchestrator/. They require explicit operator approval and do not form part of the portable Skill's automatic Plan Mode behavior. No model call, retry, cross-provider data share, or cost is authorized merely by loading this Skill.
+
+
+## Token 优化与质量门槛 / Token efficiency and quality gates
+
+- **中文：** Plan Mode 优先列出要读的关键文件路径（`context_files`），避免复制仓库、历史会话和冗余工具日志。可选 `minimize_switches: true` 仅在仍满足风险、能力、预算与权限硬约束且评分差小时尽量沿用前一模型。路由结果的模型切换次数不是实际 Token 节省的证据。
+- **English:** Prefer targeted repo-relative path hints, short verified summaries, and reviewed handoffs over replaying all source files or transcripts. Model continuity is opt-in and can never override hard filters. Do not equate a shorter prompt or fewer reported transitions with measured provider savings.
+- 本地执行器默认限制初始提示词 6000 字符、人工交接 1500 字符及 Claude 6 轮；可显式调高。**Codex 轮次没有对应硬上限**。预算超限时拒绝执行，不丢弃用户要求。/ The local runner uses enforceable character caps and a configurable Claude turn limit; Codex has no equivalent enforced cap. Over-budget inputs fail closed.

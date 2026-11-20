@@ -1,0 +1,38 @@
+{
+  "name": "Efficient project planning",
+  "priority": "balanced",
+  "surface": "api",
+  "execution": false,
+  "minimize_switches": true,
+  "max_continuity_score_gap": 3,
+  "stages": [
+    {
+      "name": "Requirements",
+      "type": "analysis",
+      "complexity": "medium",
+      "deliverable": "Short verified requirements",
+      "context_files": [
+        "README.md",
+        "docs/architecture.md"
+      ]
+    },
+    {
+      "name": "Implementation",
+      "type": "coding",
+      "complexity": "medium",
+      "deliverable": "Tested code change",
+      "context_files": [
+        "skills/model-router/scripts/route.py"
+      ]
+    },
+    {
+      "name": "Review",
+      "type": "review",
+      "complexity": "high",
+      "deliverable": "Independent risk and test review",
+      "context_files": [
+        "tests/test_router.py"
+      ]
+    }
+  ]
+}
