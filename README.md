@@ -109,3 +109,10 @@ On Windows use py -3 in place of python3. Live execution may consume credits or 
 [OpenAI model docs](https://developers.openai.com/api/docs/models) · [Anthropic model docs](https://platform.claude.com/docs/en/models/overview) · [Claude Code Skills](https://code.claude.com/docs/en/skills) · [Codex Skills](https://developers.openai.com/codex/skills)
 
 The model registry has its own verification date; editing these docs does not refresh model metadata. / 文档更新时间并不代表模型数据已实时核实。
+
+
+## V2.2：开源设计改进 / Open-source-inspired Improvements
+
+**中文：** 已参考 LiteLLM、LangGraph、Aider、AutoGen、Claude Code Subagents 和 OpenHands 的公开设计，为可选执行器增加了阶段 checkpoint、依赖人工验收、显式重试上限与人工精简交接包。保持默认 dry-run 和逐阶段批准；不会因为 CLI 返回成功就自动把阶段当作验收通过。完整比较见 [开源设计对照](docs/guides/open-source-patterns.md)，使用方法见 [受控执行指南](docs/guides/execution.md)。
+
+**English:** Drawing on public patterns from LiteLLM, LangGraph, Aider, AutoGen, Claude Code and OpenHands, the optional runner now supports manifest-bound checkpoints, acceptance-gated dependencies, bounded explicitly approved retries and human-authored compact handoffs. Dry-run remains the default; a successful CLI exit is never automatic acceptance. See [research and tradeoffs](docs/guides/open-source-patterns.md) and the [supervised execution guide](docs/guides/execution.md).

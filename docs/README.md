@@ -31,3 +31,8 @@ Current **bilingual** documentation is organized by topic rather than release nu
 | [Change history](routine/README.md) | Dated change records and next steps |
 
 Former docs/v1.4.md, docs/v2.0-execution.md and docs/evaluation.md have been consolidated and removed. Historical commands are archival.
+
+
+## 新增专题 / New research guide
+
+- [开源方案对照与设计取舍 / Open-source patterns and tradeoffs](guides/open-source-patterns.md) — LiteLLM、LangGraph、Aider、AutoGen、Claude Code、OpenHands：哪些设计已采纳、哪些还不应引入。 / What was adopted and deliberately left out.

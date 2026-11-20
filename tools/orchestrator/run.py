@@ -17,6 +17,11 @@ import subprocess
 import sys
 import uuid
 
+try:
+    from . import checkpoints
+except ImportError:  # CLI invocation from the orchestrator directory
+    import checkpoints
+
 ID_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$")
 STAGE_MODES = {"read-only", "write"}
 ENV_KEYS = {
@@ -60,6 +65,8 @@ def validate_manifest(manifest: dict) -> list[dict]:
             raise ValueError(f"approved must be boolean: {ident}")
         if not isinstance(row.get("cli_model", ""), str) or len(row.get("cli_model", "")) > 120:
             raise ValueError(f"cli_model must be a model ID or alias: {ident}")
+    # Earlier-stage dependencies only: refuse cycles and invalid stage links.
+    checkpoints.ensure_stage_ids(manifest)
     return rows
 
 
@@ -167,6 +174,8 @@ def invoke_stage(row: dict, workspace: Path, output_root: Path, timeout: int,
     except (OSError, ValueError) as exc:
         record["error"] = str(exc)
     finally:
+        # Retain the bounded response.md, not a duplicate raw Codex final file.
+        output_path.unlink(missing_ok=True)
         private_write(run_dir / "result.json", json.dumps(record, ensure_ascii=False, indent=2) + "\n")
     return record
 
@@ -184,6 +193,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--allow-write", action="store_true", help="Explicitly allow editable workspace stages")
     parser.add_argument("--handoff-file", type=Path, help="Previously reviewed handoff text; NEVER auto forwarded")
     parser.add_argument("--allow-handoff-share", action="store_true", help="Approve sending handoff to selected provider")
+    parser.add_argument("--checkpoint-file", type=Path,
+                        help="Optional private, initialized checkpoint outside the workspace")
+    parser.add_argument("--retry-failed", action="store_true",
+                        help="Explicitly retry a failed checkpointed stage (max two total attempts)")
     parser.add_argument("--output-dir", type=Path, default=Path.home() / ".model-router" / "runs")
     parser.add_argument("--timeout", type=int, default=600, help="Timeout per stage, 1..3600 seconds")
     args = parser.parse_args(argv)
@@ -214,6 +227,13 @@ def main(argv: list[str] | None = None) -> int:
             handoff = args.handoff_file.read_text(encoding="utf-8")
             if len(handoff) > MAX_HANDOFF_CHARS:
                 raise ValueError("handoff too long; manually summarize and review first")
+        checkpoint_path = args.checkpoint_file.expanduser().resolve() if args.checkpoint_file else None
+        if checkpoint_path:
+            if checkpoint_path == workspace or workspace in checkpoint_path.parents:
+                raise ValueError("checkpoint must be outside the project workspace")
+            checkpoints.load_state(checkpoint_path, manifest)
+        if args.retry_failed and not checkpoint_path:
+            raise ValueError("--retry-failed only applies with --checkpoint-file")
         if args.execute:
             # Fail before any paid call if a later stage is not approved or needs write access.
             for row in selected:
@@ -234,7 +254,15 @@ def main(argv: list[str] | None = None) -> int:
             if output_root == workspace or workspace in output_root.parents:
                 raise ValueError("store execution traces outside the project workspace to prevent accidental sharing/commits")
             output_root.mkdir(parents=True, exist_ok=True, mode=0o700)
-            record = invoke_stage(row, workspace, output_root, args.timeout, handoff)
+            if checkpoint_path:
+                checkpoints.begin(checkpoint_path, manifest, row["id"], retry_failed=args.retry_failed)
+            try:
+                record = invoke_stage(row, workspace, output_root, args.timeout, handoff)
+            except Exception:
+                # Unexpected interruption leaves "running" for human side-effect inspection.
+                raise
+            if checkpoint_path:
+                checkpoints.complete(checkpoint_path, manifest, row["id"], record)
             print(json.dumps({k: record.get(k) for k in ("stage_id", "state", "run_dir", "error")}, ensure_ascii=False))
             if record["state"] != "cli_completed_unreviewed":
                 return 4

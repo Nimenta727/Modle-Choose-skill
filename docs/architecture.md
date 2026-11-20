@@ -68,3 +68,12 @@ A published API model ID does not guarantee a CLI alias or subscription access. 
 ### Migration
 
 Host utilities moved from scripts/install.py, evals/ and orchestrator/ to tools/. The portable Skill's scripts/ paths are unchanged. Release-numbered manuals were consolidated into docs/guides/.
+
+
+## V2.2：状态流与恢复 / Checkpointed State Flow
+
+**中文：** 可选 checkpoint 将 pending → running → cli_completed_unreviewed → accepted/failed 记录在项目目录之外。默认 prepare.py 创建相邻阶段依赖，上游必须由人工接受才允许继续。状态不包含完整提示与模型输出；异常中断保留 running 状态供人工检查，禁止自动重复可能产生副作用的任务。精简交接包只使用人工撰写摘要。
+
+**English:** An optional private checkpoint tracks pending → running → cli_completed_unreviewed → accepted/failed. prepare.py creates sequential dependencies by default; only explicit human acceptance unlocks downstream stages. Interrupted stages stay running pending review, preventing blind replay of side effects. Handoffs use human-authored summaries instead of raw transcripts.
+
+[详细开源方案对照 / Research and design decisions](guides/open-source-patterns.md)

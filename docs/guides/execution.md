@@ -138,3 +138,56 @@ You can also run sequential stages with `--all --execute --interactive-review` *
 - [Codex CLI developer commands](https://developers.openai.com/codex/cli/reference): `codex exec`, `--model`, `--sandbox read-only|workspace-write`, `--output-last-message`, `--ephemeral`.
 
 Versions, flags, identities and product availability can change. Review `claude --help` and `codex exec --help` on the **actual** machine before authorizing calls.
+
+
+## V2.2：带人工验收的断点恢复 / Human-reviewed Checkpoints
+
+### 中文
+
+在已经审核并**手动设置 cli_model 和 approved=true** 的执行清单上，创建私有 checkpoint。以下示例中的状态路径位于项目目录之外；Windows 可以使用 `py -3` 并将路径换为自己的私有目录。
+
+~~~bash
+python3 tools/orchestrator/checkpoints.py --manifest local-execution.json --state /private/checkpoint.json --init
+python3 tools/orchestrator/checkpoints.py --manifest local-execution.json --state /private/checkpoint.json --status
+~~~
+
+只有用户明确要求真实执行，并在本机安装登录 CLI 后，才能增加下面的执行参数（**可能消耗模型额度**）：
+
+~~~bash
+python3 tools/orchestrator/run.py --manifest local-execution.json --workspace /path/to/project --stage s01-requirements --execute --confirm-stage s01-requirements --checkpoint-file /private/checkpoint.json
+~~~
+
+CLI 执行成功只产生 cli_completed_unreviewed。请查看执行目录、核对交付物、运行实际验收检查，然后手动记录审核。以下 evidence 只是人工声明，系统不会自行证明测试已运行：
+
+~~~bash
+python3 tools/orchestrator/checkpoints.py --manifest local-execution.json --state /private/checkpoint.json --accept-stage s01-requirements --confirm-stage s01-requirements --evidence "Reviewed deliverables and verified acceptance conditions"
+~~~
+
+若人工检查不通过，可改用 --reject-stage 配合 --reason、--confirm-stage；失败后只有额外使用 --retry-failed 才可重试，每个 checkpoint 最多两次尝试。运行期间崩溃留下的 running 需要先人工排查副作用，不能自动重放。改变 manifest 后必须重新初始化独立的 checkpoint，不能沿用旧状态。
+
+人工另外撰写一个简短、无机密的摘要文件后，可用下面命令生成交接包，**这不会上传或传输文件**：
+
+~~~bash
+python3 tools/orchestrator/handoff_packet.py --manifest local-execution.json --state /private/checkpoint.json --stage s01-requirements --summary-file /private/reviewed-summary.md --output /private/handoff.json
+~~~
+
+如确实需要向另一家模型发送，仍须分别审核内容及使用 run.py 的 --handoff-file 与 --allow-handoff-share。状态哈希不是身份认证；模型是否真实可用、任务是否通过验收，仍需独立证据。
+
+### English
+
+Initialize a **private checkpoint outside your project** only after reviewing the execution manifest and manually setting the relevant stage's cli_model and approved=true:
+
+~~~bash
+python3 tools/orchestrator/checkpoints.py --manifest local-execution.json --state /private/checkpoint.json --init
+python3 tools/orchestrator/checkpoints.py --manifest local-execution.json --state /private/checkpoint.json --status
+~~~
+
+For a real model call, you must have an authenticated local CLI and explicitly use --execute plus an exact stage confirmation (may consume credits):
+
+~~~bash
+python3 tools/orchestrator/run.py --manifest local-execution.json --workspace /path/to/project --stage s01-requirements --execute --confirm-stage s01-requirements --checkpoint-file /private/checkpoint.json
+~~~
+
+CLI completion is *unreviewed*. Inspect output and independently validate acceptance before using --accept-stage, --confirm-stage and a human --evidence note. Reject incomplete output with --reject-stage and --reason. Only --retry-failed permits another attempted run, limited to two total attempts. An interrupted running stage requires manual side-effect review before a new plan; changed manifests invalidate old checkpoints.
+
+Generate a compact handoff using a **separately human-authored** safe summary via handoff_packet.py, as in the Chinese example. Packet creation does not send it to another provider. Cross-provider transfer still requires --handoff-file and --allow-handoff-share. State hashes are not authenticated proof of review.

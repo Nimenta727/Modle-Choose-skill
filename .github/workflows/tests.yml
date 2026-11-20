@@ -38,6 +38,10 @@ jobs:
           python skills/model-router/scripts/route.py --task-file skills/model-router/examples/project-plan.json --format json > "${{ runner.temp }}/route-v2.json"
           python tools/orchestrator/prepare.py --task-file skills/model-router/examples/project-plan.json --route-file "${{ runner.temp }}/route-v2.json" --output "${{ runner.temp }}/unapproved-v2.json"
           python tools/orchestrator/run.py --manifest "${{ runner.temp }}/unapproved-v2.json" --workspace . --all
+      - name: V2.2 checkpoint smoke (no model calls)
+        run: |
+          python tools/orchestrator/checkpoints.py --manifest "${{ runner.temp }}/unapproved-v2.json" --state "${{ runner.temp }}/checkpoint-v22.json" --init
+          python tools/orchestrator/checkpoints.py --manifest "${{ runner.temp }}/unapproved-v2.json" --state "${{ runner.temp }}/checkpoint-v22.json" --status > "${{ runner.temp }}/checkpoint-status.json"
       - name: Upload offline eval reports
         if: always()
         uses: actions/upload-artifact@v4

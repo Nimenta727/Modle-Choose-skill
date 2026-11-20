@@ -69,4 +69,11 @@ The root repository has `tools/evals/compare_trials.py`, which produces `proposa
 
 ## Optional supervised execution (repository checkout only, NOT implicit)
 
-`orchestrator/prepare.py` can convert a JSON router result into an **unapproved** execution manifest. `orchestrator/run.py` is an optional local CLI bridge to Claude Code or Codex. It defaults to dry-run. **Never invoke live execution from Plan Mode merely because the Skill was read or a plan was generated.** Live operation requires the user's explicit request, an approved stage, an explicit CLI model, `--execute`, and a matching stage confirmation; writes need a separate `--allow-write`. Do not silently forward previous responses across providers. See root `docs/guides/execution.md`. This Skill does not automatically install the execution bridge into other projects.
+`tools/orchestrator/prepare.py` can convert a JSON router result into an **unapproved** execution manifest. `tools/orchestrator/run.py` is an optional local CLI bridge to Claude Code or Codex. It defaults to dry-run. **Never invoke live execution from Plan Mode merely because the Skill was read or a plan was generated.** Live operation requires the user's explicit request, an approved stage, an explicit CLI model, `--execute`, and a matching stage confirmation; writes need a separate `--allow-write`. Do not silently forward previous responses across providers. See root `docs/guides/execution.md`. This Skill does not automatically install the execution bridge into other projects.
+
+
+## V2.2 checkpoint / 人工验收门槛
+
+**中文：** 可选的本地 tools/orchestrator/checkpoints.py 提供有界失败重试、阶段状态和人工审核依赖，handoff_packet.py 只为已验收阶段生成精简交接包。**Plan Mode 读取本 Skill 不代表可以调用执行器**，必须等待明确用户授权。
+
+**English:** Optional checkpoint and compact-handoff utilities live in the host repository's tools/orchestrator/. They require explicit operator approval and do not form part of the portable Skill's automatic Plan Mode behavior. No model call, retry, cross-provider data share, or cost is authorized merely by loading this Skill.

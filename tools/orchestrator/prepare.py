@@ -64,6 +64,8 @@ def build_manifest(task: dict, routing: dict) -> dict:
             "mode": "read-only",
             "prompt": prompt,
             "deliverable": deliverable,
+            # Sequential by default. Review dependencies before approving stages.
+            "depends_on": [result[-1]["id"]] if result else [],
         })
     return {"schema_version": 1,
             "description": "Review every stage, set cli_model and approved=true before any live execution.",
