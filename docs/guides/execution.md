@@ -1,4 +1,31 @@
-# V2.0 MVP — supervised Claude Code / Codex execution
+# 安全执行 / Supervised Execution and Safety
+
+## 中文
+
+### 默认仅预览
+
+执行器只用于用户另行授权的本地操作。先生成未批准清单，再预览：
+
+~~~bash
+python3 skills/model-router/scripts/route.py --task-file skills/model-router/examples/project-plan.json --format json > routing-result.json
+python3 tools/orchestrator/prepare.py --task-file skills/model-router/examples/project-plan.json --route-file routing-result.json --output local-execution.json
+python3 tools/orchestrator/run.py --manifest local-execution.json --workspace . --all
+~~~
+
+清单初始每阶段 approved=false、cli_model 为空、mode=read-only。默认运行**不会调用模型**。要运行真实阶段，需安装并登录对应 CLI，核对本机实际支持的模型别名、权限和费用，编辑清单并逐阶段批准。
+
+~~~bash
+python3 tools/orchestrator/run.py --manifest local-execution.json --workspace /path/to/project --stage s01-requirements --execute --confirm-stage s01-requirements
+~~~
+
+真实调用可能消耗账号额度。写入阶段须额外设置 mode=write、显式 --allow-write，并且 Git 工作区干净；只读权限不构成完整系统隔离。CLI 可能读取代码并发送必要上下文给供应商，务必确认披露许可。完成时只得到**未经人工验收**的结果，不代表测试通过。
+
+### 跨模型交接
+
+下一供应商的交接必须由用户审核、单独提供安全内容，并显式采用 --handoff-file 与 --allow-handoff-share。不会自动传输完整日志、自动提交 Git、推送或部署。
+
+## English
+
 
 This is a **local execution adapter**, not a hosted multi-agent service or a guarantee of API/model availability. All commands below require Python 3.10+, an existing local checkout of the project, and *separately installed and authenticated* Claude Code or Codex CLI for **live** execution. The Model Router Skill remains recommendation-only; execution is a separate and opt-in workflow.
 
@@ -17,7 +44,7 @@ API model IDs in `routing-result.json` are **not** automatically CLI model IDs o
 ## 2. Convert to a safe, unapproved manifest
 
 ```bash
-python3 orchestrator/prepare.py \
+python3 tools/orchestrator/prepare.py \
   --task-file skills/model-router/examples/project-plan.json \
   --route-file routing-result.json \
   --output local-execution.json
@@ -48,7 +75,7 @@ The alias in this example is illustrative and must be checked against your local
 ## 3. Inspect what would run (free, no CLI invocation)
 
 ```bash
-python3 orchestrator/run.py --manifest local-execution.json \
+python3 tools/orchestrator/run.py --manifest local-execution.json \
   --workspace /path/to/your-project --all
 ```
 
@@ -57,7 +84,7 @@ python3 orchestrator/run.py --manifest local-execution.json \
 ## 4. Execute exactly one approved stage
 
 ```bash
-python3 orchestrator/run.py --manifest local-execution.json \
+python3 tools/orchestrator/run.py --manifest local-execution.json \
   --workspace /path/to/your-project \
   --stage s01-requirements --execute --confirm-stage s01-requirements
 ```
@@ -67,7 +94,7 @@ This **may consume model credits or subscription usage**. A `read-only` stage is
 For an explicitly approved `"mode": "write"` stage:
 
 ```bash
-python3 orchestrator/run.py --manifest local-execution.json \
+python3 tools/orchestrator/run.py --manifest local-execution.json \
   --workspace /path/to/your-project \
   --stage s02-implementation --execute --confirm-stage s02-implementation --allow-write
 ```
@@ -83,7 +110,7 @@ Results are saved outside the workspace by default in `~/.model-router/runs/<tim
 If the next stage belongs to another provider, write a **new, concise, human-reviewed handoff** with only the necessary safe content. Then explicitly allow its transmission:
 
 ```bash
-python3 orchestrator/run.py --manifest local-execution.json \
+python3 tools/orchestrator/run.py --manifest local-execution.json \
   --workspace /path/to/your-project \
   --stage s03-review --execute --confirm-stage s03-review \
   --handoff-file /path/to/reviewed-handoff.md --allow-handoff-share

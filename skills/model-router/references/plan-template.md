@@ -29,3 +29,12 @@ Report full/partial/no estimate coverage, clearly label lower-bound-only models 
 For each transition, record expected input artifact, previous decisions and constraints, acceptance evidence **not yet executed**, and unresolved items. `scripts/handoff.py` creates optional unfilled Markdown templates; only write files on explicit request.
 
 **Transitions:** State the artifact handed to the next phase (e.g., ADR, schema, test criteria) and triggers for rerouting. **Risks:** Show stale metadata, price uncertainty, unverified access, and cross-platform restrictions. **Verification:** List objective acceptance tests; assigning a model is not proof of correctness.
+
+## 中文说明 / Chinese guidance
+
+技术计划中的原始交付物和验收条件必须保留；模型选择只增加分工、理由、平台权限、核实日期和失败切换条件。价格为有条件的 API 标价参考，不是实际订阅账单；未知数据不可写成零。交接模板不能冒充已执行项目或已通过测试。
+
+## English reminder
+
+Keep the original technical deliverables and acceptance criteria. Show allocation, rationale, surface-specific evidence, metadata age and switch triggers. API list-price estimates are not subscription bills, unknown costs are not zero, and unfilled handoffs are not evidence of execution.
+

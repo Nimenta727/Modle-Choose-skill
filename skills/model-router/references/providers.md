@@ -17,3 +17,12 @@
 4. **Tool-specific entitlement**: Claude Code, Codex, ChatGPT and Claude web/app each have independent selection rules, aliases and subscription conditions. No API catalog proves native access to them.
 
 This repository never silently changes published model metadata based on scraped HTML or an account inventory. Official page string matching may miss rendered content or find misleading text. Review a candidate's detail page before editing context, capabilities, lifecycle, prices or ratings. Distinguish confirmed observations from heuristic assumptions.
+
+## 中文说明 / Chinese guidance
+
+请将官方模型发布信息、API 目录可见、一次实际请求成功和客户端/订阅模型权限严格区分。网页匹配有可能漏掉动态内容，新模型需要官方详情复核，不能未经授权发起付费请求或上传项目数据。
+
+## English reminder
+
+Distinguish published API IDs, account API inventory, successful calls and tool-specific entitlements. Scraped HTML is incomplete evidence. New candidates require manual review, never unauthorized paid probes or data transmission.
+

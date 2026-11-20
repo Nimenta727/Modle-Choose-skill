@@ -54,3 +54,12 @@ A user may explicitly provide a locally reviewed `--calibration-file` with `sche
 ## 7. Stage handoff integrity
 
 For stage transitions list input artifact, decisions, constraints, tests actually run and unresolved issues. `scripts/handoff.py` prints blank templates unless `--output-dir` is explicitly provided; no model invocation or project editing. Require verified evidence before marking a handoff complete; do not manufacture approval or tests.
+
+## 中文摘要 / Chinese summary
+
+平台、权限、预算、风险和能力限制必须先于任何评分。API 模型清单不证明成功调用，外部条件性候选不等于本地可执行模型。参考价格不是账单，人工审核后的校准只能有限调整已合格模型排序，不得放宽硬性条件。
+
+## English summary
+
+Apply hard constraints before ranking. API inventory is not successful-call evidence, external recommendations are not native executors, list-price costs are not bills, and reviewed calibration never bypasses safety, access or budget gates.
+

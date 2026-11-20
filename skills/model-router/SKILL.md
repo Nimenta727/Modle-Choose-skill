@@ -9,6 +9,10 @@ description: >-
 
 # Model Router — Plan Mode skill (V2.0 recommendation + optional runner)
 
+## 中文使用概要 / Chinese summary
+
+Plan Mode 生成计划之前先读取本 Skill 的 references/ 模型目录、路由规则和输出模板；检查当前平台、账号实际能力、风险、预算及模型资料核实时间。先用硬性条件过滤，再作启发式排序，在原技术计划内展示模型主选、备用、参考成本和阶段交接要求。若当前平台无已知可用模型，必须明确标注“不可直接执行”。真实 Claude Code/Codex 调度需额外授权，**不得因读取 Skill 而自动调用模型**。
+
 ## Required workflow
 
 1. Read this file and `references/routing-policy.md`, `references/plan-template.md`, `references/model-registry.json`, and `references/providers.md` from **this installed skill directory**.
@@ -46,7 +50,7 @@ For a repository checkout use `skills/model-router/scripts/route.py`, etc. Input
 
 ## Validation & evidence policy
 
-When reporting whether this Skill works, distinguish policy unit/eval results from real Claude Code / Codex activation. The repository's `evals/evaluate_routes.py` validates deterministic routing contracts; `evals/live_triggers.py` is an optional **explicitly authorized** account-backed smoke runner and defaults to no model calls. Its Plan Mode table checks are not proof of internal Skill activation. Read `docs/evaluation.md` in the repository for the rubric; do not invent live invocation or empirical model-quality metrics. Never auto-tune `model-registry.json` from synthetic route cases.
+When reporting whether this Skill works, distinguish policy unit/eval results from real Claude Code / Codex activation. The repository's `evals/evaluate_routes.py` validates deterministic routing contracts; `evals/live_triggers.py` is an optional **explicitly authorized** account-backed smoke runner and defaults to no model calls. Its Plan Mode table checks are not proof of internal Skill activation. Read `docs/guides/evaluation.md` in the repository for the rubric; do not invent live invocation or empirical model-quality metrics. Never auto-tune `model-registry.json` from synthetic route cases.
 
 ## V1.4 commands (optional; no automatic calls)
 
@@ -60,9 +64,9 @@ python3 scripts/route.py --task-file examples/project-plan.json --calibration-fi
 python3 scripts/handoff.py --task-file examples/project-plan.json
 ```
 
-The root repository has `evals/compare_trials.py`, which produces `proposal_unreviewed` ONLY; it is not installed as a model-switching skill or auto-applied. Cost outputs are uncached vendor API-list illustrations, not subscription bills. Handoff templates are **unfilled**, never claimed to be actual test outcomes.
+The root repository has `tools/evals/compare_trials.py`, which produces `proposal_unreviewed` ONLY; it is not installed as a model-switching skill or auto-applied. Cost outputs are uncached vendor API-list illustrations, not subscription bills. Handoff templates are **unfilled**, never claimed to be actual test outcomes.
 
 
 ## Optional supervised execution (repository checkout only, NOT implicit)
 
-`orchestrator/prepare.py` can convert a JSON router result into an **unapproved** execution manifest. `orchestrator/run.py` is an optional local CLI bridge to Claude Code or Codex. It defaults to dry-run. **Never invoke live execution from Plan Mode merely because the Skill was read or a plan was generated.** Live operation requires the user's explicit request, an approved stage, an explicit CLI model, `--execute`, and a matching stage confirmation; writes need a separate `--allow-write`. Do not silently forward previous responses across providers. See root `docs/v2.0-execution.md`. This Skill does not automatically install the execution bridge into other projects.
+`orchestrator/prepare.py` can convert a JSON router result into an **unapproved** execution manifest. `orchestrator/run.py` is an optional local CLI bridge to Claude Code or Codex. It defaults to dry-run. **Never invoke live execution from Plan Mode merely because the Skill was read or a plan was generated.** Live operation requires the user's explicit request, an approved stage, an explicit CLI model, `--execute`, and a matching stage confirmation; writes need a separate `--allow-write`. Do not silently forward previous responses across providers. See root `docs/guides/execution.md`. This Skill does not automatically install the execution bridge into other projects.

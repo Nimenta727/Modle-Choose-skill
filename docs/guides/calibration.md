@@ -1,4 +1,34 @@
-# V1.4 — model-evidence calibration, cost reference and handoff
+# 成本、校准与交接 / Cost, Calibration and Handoffs
+
+## 中文
+
+### API 价格只是估算
+
+在任务阶段提供 estimated_input_tokens 与 estimated_output_tokens（整个阶段累积值），才可以计算对应 API 的未缓存标价参考费用；缺失字段标记“未估算”，不当作零。max_stage_api_reference_usd 只适用于 API 环境、已估算且非“起价”模型。它不是订阅账单或对真实成本的承诺，也不涵盖工具收费、缓存、批次、失败重试、地区附加费等。
+
+~~~bash
+python3 skills/model-router/scripts/route.py --task-file skills/model-router/examples/budget-plan.json
+~~~
+
+### 配对真实任务与人工校准
+
+tools/evals/trials.json 初始为空。比较至少需要六个独立匹配任务，每个任务每个模型至少两次，并记录代码快照、验收规则、工具环境的哈希。计算结果只是 proposal_unreviewed，不会被路由器自动采用。评审者需要独立审阅真实证据并创建 user_reviewed 校准文件；有限的评分修正不能突破模型权限、预算、任务风险和平台限制。
+
+~~~bash
+python3 tools/evals/score_trials.py --trials tools/evals/trials.json
+python3 tools/evals/compare_trials.py --trials tools/evals/trials.json --json-out proposal.json
+~~~
+
+### 交接文档
+
+~~~bash
+python3 skills/model-router/scripts/handoff.py --task-file skills/model-router/examples/project-plan.json
+~~~
+
+默认只打印待填写模板；不能把模板当成已经执行或验收过的结果。跨供应商共享前必须人工筛选信息并另行许可。
+
+## English
+
 
 ## Scope and limits
 
@@ -14,15 +44,15 @@ python3 skills/model-router/scripts/route.py --task-file skills/model-router/exa
 
 ## 2. Real-data paired evaluation
 
-Source dataset: `evals/trials.json` (intentionally EMPTY until genuine results exist). Use `evals/score_trials.py` for descriptive aggregates, `evals/compare_trials.py` for conservative matched comparisons.
+Source dataset: `tools/evals/trials.json` (intentionally EMPTY until genuine results exist). Use `tools/evals/score_trials.py` for descriptive aggregates, `tools/evals/compare_trials.py` for conservative matched comparisons.
 
 Each paired trial row must include these existing fields: `run_id`, `task_id`, `task_type`, `model_id`, `passed` (observed objective outcome). For pair inclusion also supply `surface`, `fixture_sha256`, `rubric_sha256`, `harness_sha256` (64 hexadecimal characters each). The harness fingerprint must describe the **same tool policies/environment** across models, not a model-specific configuration. Record elapsed seconds, billed USD and retry counts only if actually measured; omit unknown amounts rather than using zero. Keep full raw experiment logs private.
 
 At least six **distinct matched task IDs**, with two repeat runs **per model per task**, are required for an evidence proposal; otherwise `suggested_adjustments` is empty. The tool uses an exploratory exact one-sided sign test on per-task acceptance differences. Ties do not count as decisive. Current p-values are **not corrected for multiple testing** and may be unreliable with task selection bias, experiment drift, reviewer dependence or uneven tool setup; independent review is mandatory. Correlated tasks, repeated seeds and same-task near duplicates are not independent evidence, even when IDs differ. These limitations matter more than passing a numeric significance threshold.
 
 ```bash
-python3 evals/score_trials.py --trials evals/trials.json
-python3 evals/compare_trials.py --trials evals/trials.json --json-out /tmp/proposal.json
+python3 tools/evals/score_trials.py --trials tools/evals/trials.json
+python3 tools/evals/compare_trials.py --trials tools/evals/trials.json --json-out /tmp/proposal.json
 ```
 
 The comparison result is always `status: proposal_unreviewed`. It **cannot** be passed to `route.py --calibration-file`. To apply a proposed adjustment you must separately review the raw trials and create a *different user-owned file* like:
