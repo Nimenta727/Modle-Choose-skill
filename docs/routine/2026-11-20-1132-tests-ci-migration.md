@@ -13,3 +13,11 @@ Updated test imports, evaluation fixture paths, installer references, CI compile
 **Verification:** Checked workflow text for the new evaluation and runner entrypoints. No unit-test success is claimed before GitHub Actions finishes.
 
 **Next:** Verify CI; replace outdated release-specific guides with bilingual topic docs and add a repository layout test.
+
+---
+
+### 发行归档提示 / Release archive notice (2026-11-20)
+
+中文：这是对应日期的历史记录，保留原始内容和当时的验证边界。当前安装、目录结构与安全要求，请查看 [项目首页](../../README.md)、[最新文档](../README.md) 和 [发行指南](../guides/release.md)。新版本不改变本记录在当时所述事实。
+
+English: This is a preserved historical record, including the evidence available at its original date. For supported paths, current safety requirements and packaging, see the [README](../../README.md), [documentation index](../README.md) and [release guide](../guides/release.md). This notice does not retroactively change historical test claims.

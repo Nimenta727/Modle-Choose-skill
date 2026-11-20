@@ -39,3 +39,11 @@
 Hardened environment-specific routing, separated API inventory visibility from successful model calls, and improved hard-budget and default-complexity handling. Broadened read-only model discovery and added tests. Next: client activation and empirical evaluation.
 
 **Context:** This is a historical log, not the current installation guide. Paths and commands may have been superseded by tools/ and docs/guides/. The original Chinese text preserves the checks reported at the time.
+
+---
+
+### 发行归档提示 / Release archive notice (2026-11-20)
+
+中文：这是对应日期的历史记录，保留原始内容和当时的验证边界。当前安装、目录结构与安全要求，请查看 [项目首页](../../README.md)、[最新文档](../README.md) 和 [发行指南](../guides/release.md)。新版本不改变本记录在当时所述事实。
+
+English: This is a preserved historical record, including the evidence available at its original date. For supported paths, current safety requirements and packaging, see the [README](../../README.md), [documentation index](../README.md) and [release guide](../guides/release.md). This notice does not retroactively change historical test claims.

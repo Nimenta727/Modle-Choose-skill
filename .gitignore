@@ -13,3 +13,6 @@ tools/evals/traces/
 .model-router/
 local-execution.json
 routing-result.json
+
+# Built distribution artifacts / 本地发行产物
+dist/

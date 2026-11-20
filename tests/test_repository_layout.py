@@ -11,7 +11,11 @@ class LayoutTests(unittest.TestCase):
             "skills/model-router/SKILL.md",
             "skills/model-router/scripts/route.py",
             "tools/install.py", "tools/evals/evaluate_routes.py",
-            "tools/evals/trials.json", "tools/orchestrator/prepare.py",
+            "tools/evals/trials.json",
+            "tools/package_release.py", "tools/check_docs.py",
+            "release/version.json", "release/notes.md",
+            "docs/guides/release.md", "CHANGELOG.md",
+            "CONTRIBUTING.md", "SECURITY.md", "tools/orchestrator/prepare.py",
             "tools/orchestrator/run.py",
         ):
             with self.subTest(path=path):
