@@ -105,6 +105,12 @@ def validate_task(task: dict) -> None:
         raise ValueError("max cost must be a finite nonnegative number")
     if "execution" in task and type(task["execution"]) is not bool:
         raise ValueError("execution must be boolean")
+    if "minimize_switches" in task and type(task["minimize_switches"]) is not bool:
+        raise ValueError("minimize_switches must be boolean")
+    if "max_continuity_score_gap" in task:
+        gap = task["max_continuity_score_gap"]
+        if type(gap) not in (int, float) or not math.isfinite(gap) or not 0 <= gap <= 10:
+            raise ValueError("max_continuity_score_gap must be finite and between 0 and 10")
 
 
 def blended_price(m: dict) -> float:
@@ -330,7 +336,19 @@ def route(task: dict, registry: dict, access: dict | list[dict] | None = None,
         ranks = {"call-verified": 3, "listed": 2, "user-reported": 1, "conditional": 0}
         candidates.sort(key=lambda c: (-ranks[c["availability"]], -c["score"], c["id"]))
         primary = candidates[0] if candidates else None
-        backup = next((c for c in candidates[1:] if c["id"] != primary["id"]), None) if primary else None
+        # Opt-in continuity within the same evidence rank and after all hard filters.
+        # This is a policy heuristic, not evidence of measured token savings.
+        continuity_selected = False
+        if task.get("minimize_switches", False) and primary and output and output[-1]["primary"]:
+            previous_id = output[-1]["primary"]["id"]
+            previous = next((c for c in candidates if c["id"] == previous_id), None)
+            gap = task.get("max_continuity_score_gap", 3)
+            if previous and ranks[previous["availability"]] == ranks[primary["availability"]] and previous["score"] >= primary["score"] - gap:
+                if previous_id != primary["id"]:
+                    primary = {**previous, "reason": previous["reason"] +
+                               "；连续模型偏好（潜在减少交接；未验证实际 Token 节省）"}
+                    continuity_selected = True
+        backup = next((c for c in candidates if c["id"] != primary["id"]), None) if primary else None
         # Keep useful planning advice even if current product has no demonstrated native
         # model. This is informational only, NEVER an executable assignment.
         advisory = None
@@ -348,8 +366,11 @@ def route(task: dict, registry: dict, access: dict | list[dict] | None = None,
                             "reason": "API candidate only; requires explicit local verification or authorized orchestrator"}
         output.append({"name": s["name"], "type": s["type"], "complexity": s.get("complexity", "medium"),
                        "deliverable": s.get("deliverable", "见实施计划"), "min_fitness": min_fitness(s),
-                       "primary": primary, "backup": backup, "external_advisory": advisory, "excluded": excluded,
+                       "primary": primary, "backup": backup, "continuity_selected": continuity_selected,
+                       "external_advisory": advisory, "excluded": excluded,
                        "cost_estimate": primary["api_cost_estimate"] if primary else {"status": "unknown", "api_reference_usd": None}})
+    switches = sum(output[i]["primary"]["id"] != output[i - 1]["primary"]["id"]
+                   for i in range(1, len(output)) if output[i]["primary"] and output[i - 1]["primary"])
     covered = [x["cost_estimate"] for x in output if x["cost_estimate"]["api_reference_usd"] is not None]
     lower_bound = any(e["status"] == "lower-bound" for e in covered)
     full_coverage = len(covered) == len(output)
@@ -378,14 +399,17 @@ def route(task: dict, registry: dict, access: dict | list[dict] | None = None,
             "priority": priority, "registry_verified_at": registry["verified_at"],
             "registry_freshness": "stale" if (now.date() - verified_date).days > 1 else "cached (not live-checked)",
             "scoring": "policy heuristic with optional user-reviewed offsets, not benchmark", "stages": output,
-            "project_cost": project_cost, "calibration_applied": bool(offsets), "warnings": list(dict.fromkeys(warnings))}
+            "project_cost": project_cost, "calibration_applied": bool(offsets),
+            "model_switches": switches, "minimize_switches": task.get("minimize_switches", False),
+            "warnings": list(dict.fromkeys(warnings))}
 
 
 def render_markdown(result: dict) -> str:
     esc = lambda value: str(value).replace("|", "\\|").replace("\n", " ")
     lines = ["## Model allocation / 模型分配", "",
              f"- **Mode**: {result['mode']} | **Surface**: {result['surface']} | **Policy**: {result['priority']}",
-             f"- **Registry verified**: {result['registry_verified_at']} ({result['registry_freshness']}); scoring = heuristic, not a benchmark", "",
+             f"- **Registry verified**: {result['registry_verified_at']} ({result['registry_freshness']}); scoring = heuristic, not a benchmark",
+             f"- **Model transitions**: {result.get('model_switches', 'unknown')} (continuity opt-in: {result.get('minimize_switches', False)}; not measured savings)", "",
              "| 阶段 | 交付物 | 当前平台主选（ID） | 推理等级 | 原因 | 备用模型（ID） | 访问状态 | 仅供参考的外部候选 |",
              "|---|---|---|---|---|---|---|---|"]
     for s in result["stages"]:

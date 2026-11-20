@@ -142,14 +142,15 @@ def invoke_stage(row: dict, workspace: Path, output_root: Path, timeout: int,
         raise ValueError(f"stage {row['id']} is not approved with a CLI model")
     if row.get("mode", "read-only") == "write" and not workspace_is_clean(workspace):
         raise ValueError("workspace has uncommitted/untracked changes; review or clean before write mode")
+    # Enforce initial prompt size before creating output files or invoking the CLI.
+    prompt = prepare_prompt(row, handoff)
+    budget = token_budget.budget_report(row, prompt, handoff)
     exe = cli_override or shutil.which(row["agent"])
     if not exe:
         raise ValueError(f"{row['agent']} CLI not found; install and sign in locally")
     run_dir = output_root / f"{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}-{row['id']}-{uuid.uuid4().hex[:8]}"
     run_dir.mkdir(parents=True, exist_ok=False, mode=0o700)
     output_path = run_dir / "cli-final.txt"
-    prompt = prepare_prompt(row, handoff)
-    budget = token_budget.budget_report(row, prompt, handoff)
     command = make_command(row, output_path, exe)
     child_env = {k: v for k, v in os.environ.items() if k in ENV_KEYS}
     # The CLI inherits ONLY required platform, transport, and explicit provider auth vars.
